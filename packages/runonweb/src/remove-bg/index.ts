@@ -28,7 +28,10 @@ function isWebGpuShaderError(err: unknown): boolean {
 export type RemoveBgOptions = {
   /** Hugging Face model id. Defaults to BEN2. */
   model?: string
-  /** Inference device. Defaults to `auto` (WebGPU when available, else WASM). */
+  /**
+   * Inference device. Defaults to `auto` (WebGPU when available, else WASM).
+   * BEN2 ignores WebGPU and loads on WASM; see the note on the default model.
+   */
   device?: Device
   /** Called while model files download / load. */
   onProgress?: ProgressCallback

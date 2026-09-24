@@ -15,8 +15,10 @@ export function modelFaq(model: Model): Array<{ q: string; a: string }> {
     {
       q: `Which browsers support ${model.name}?`,
       a:
-        model.webgpu === 'none'
-          ? 'Any modern browser with WebAssembly. This model does not use WebGPU yet: it fails at session creation in ONNX Runtime Web, so runonweb pins it to WASM.'
+        model.slug === 'remove-bg'
+          ? 'Any modern browser with WebAssembly. BEN2’s LayerNorm shader fails on the current ONNX Runtime WebGPU build, so runonweb pins this model to WASM.'
+          : model.webgpu === 'none'
+            ? 'Any modern browser with WebAssembly. This model does not use WebGPU yet: it fails at session creation in ONNX Runtime Web, so runonweb pins it to WASM.'
           : model.webgpu === 'required'
             ? 'A Chromium browser with WebGPU and a recent GPU. This model has no WebAssembly fallback.'
             : 'Chromium browsers use WebGPU. Firefox and Safari fall back to WebAssembly automatically, slower but identical output.',
