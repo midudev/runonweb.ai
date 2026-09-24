@@ -67,6 +67,11 @@ export const INPUT_LABEL: Record<ModelInput, string> = {
   text: 'Text',
 }
 
+/** Classify samples carry their questions (and demo flags) as JSON in `extra`. */
+function kevQuestions(questions: Record<string, unknown>, flags: { dateFacts?: boolean } = {}): string {
+  return JSON.stringify({ questions, ...flags })
+}
+
 export const models: Model[] = [
   {
     slug: 'ocr',
@@ -74,7 +79,7 @@ export const models: Model[] = [
     task: 'OCR',
     tagline: 'Read text from any photo. Pick the size.',
     description:
-      'Extract printed and scene text in the browser. Three sizes — tiny, small, medium — so you can trade a few megabytes for accuracy. Nothing is uploaded.',
+      'Extract printed and scene text in the browser. Three sizes (tiny, small, medium) so you can trade a few megabytes for accuracy. Nothing is uploaded.',
     packagePath: 'runonweb/ocr',
     input: 'image',
     status: 'available',
@@ -91,11 +96,12 @@ export const models: Model[] = [
       '............',
     ],
     samples: [
-      { kind: 'image', label: 'Alfajor', src: '/samples/ocr-alfajor.png' },
+      { kind: 'image', label: 'Alfajor', src: '/samples/ocr-alfajor.jpg' },
       { kind: 'image', label: 'Receipt', src: '/samples/ocr-receipt.png' },
       { kind: 'image', label: 'Carta · ES', src: '/samples/ocr-menu-es.png' },
       { kind: 'image', label: 'Carte · FR', src: '/samples/ocr-menu-fr.png' },
       { kind: 'image', label: 'Document', src: '/samples/ocr-document.png' },
+      { kind: 'image', label: 'El Tano', src: '/samples/ocr-el-tano.png' },
       { kind: 'image', label: 'Label', src: '/samples/ocr-sign.jpg' },
       { kind: 'image', label: 'Street', src: '/samples/street.jpg' },
     ],
@@ -135,7 +141,7 @@ ocr.dispose()`,
     task: 'Background removal',
     tagline: 'Drop a photo, get a transparent PNG.',
     description:
-      'Remove image backgrounds client-side. Drop a photo and get a PNG with an alpha channel — private by default and offline-capable once the model is cached.',
+      'Remove image backgrounds client-side. Drop a photo and get a PNG with an alpha channel. Private by default, and offline-capable once the model is cached.',
     packagePath: 'runonweb/remove-bg',
     input: 'image',
     status: 'available',
@@ -161,7 +167,7 @@ ocr.dispose()`,
     ],
     bench: { wasm: '~15 s' },
     notes: [
-      'BEN2 (2025) is a general background eraser: hair, fur, products and hard edges — not just portraits.',
+      'BEN2 (2025) is a general background eraser: hair, fur, products and hard edges, not just portraits.',
       '~219 MB of fp16 weights, cached after the first download.',
       'Output is a PNG Blob with alpha, same size as the input.',
       'Runs on WASM. WebGPU dies in BEN2’s LayerNorm shader (fp16 activation, fp32 scale and bias) on current onnxruntime-web. The fix is upstream (onnxruntime#32629, 2026-09-22) and not published yet.',
@@ -198,7 +204,7 @@ remover.dispose()`,
     task: 'Speech-to-Text',
     tagline: 'Transcribe audio without a server.',
     description:
-      'Transcribe audio to text entirely in the browser. Record from the mic or drop a file — nothing is uploaded, nothing is billed per minute.',
+      'Transcribe audio to text entirely in the browser. Record from the mic or drop a file. Nothing is uploaded, nothing is billed per minute.',
     packagePath: 'runonweb/stt',
     input: 'audio',
     status: 'beta',
@@ -218,6 +224,7 @@ remover.dispose()`,
       { kind: 'audio', label: 'JFK · inaugural', src: '/samples/jfk.wav', duration: '11 s', language: 'en' },
       { kind: 'audio', label: 'MLK · dream', src: '/samples/mlk.wav', duration: '13 s', language: 'en' },
       { kind: 'audio', label: 'TED · talk', src: '/samples/ted.wav', duration: '14 s', language: 'en' },
+      { kind: 'audio', label: 'Messi', src: '/samples/messi.wav', duration: '11 s', language: 'es' },
       { kind: 'audio', label: 'Español · ES', src: '/samples/spanish-es.wav', duration: '12 s', language: 'es' },
       { kind: 'audio', label: 'Español · LATAM', src: '/samples/spanish-latam.wav', duration: '14 s', language: 'es' },
       { kind: 'audio', label: 'Japonés · JA', src: '/samples/japanese.wav', duration: '12 s', language: 'ja' },
@@ -231,7 +238,8 @@ remover.dispose()`,
       'English-only by default. Pass `model` (e.g. `onnx-community/whisper-tiny`) and `language` (`es`, `ja`…) for a multilingual Whisper variant. Without `language`, tiny often guesses English and the transcript comes out translated. The live demo always uses `task: "transcribe"` and lets you pick the language.',
       'WebGPU is several times faster; WASM works everywhere else.',
       'Audio is decoded and resampled to 16 kHz mono in the browser.',
-      'Pass `onPartial` to receive words as they are generated. Results include word timestamps when the model supports them.',
+      'Pass `timestamps: "segment"` for each phrase with the model\'s start and end, in seconds. `"word"` (or `true`) splits those phrases into words and keeps every word inside its phrase. This ONNX Whisper has no cross-attentions, so it cannot time a word on its own. Omit `timestamps` and `chunks` is empty.',
+      'Pass `onPartial` to receive words as they are generated.',
     ],
     weights: {
       id: 'onnx-community/whisper-tiny.en',
@@ -251,10 +259,11 @@ const stt = new SpeechToText({
 await stt.load()
 
 // Blob, File, URL string, or Float32Array (16 kHz mono)
-const { text } = await stt.transcribe(audioBlob, {
+const { text, chunks } = await stt.transcribe(audioBlob, {
+  timestamps: 'word',
   onPartial: (partial) => console.log(partial),
 })
-console.log(text)
+console.log(text, chunks[0])
 
 stt.dispose()`,
   },
@@ -264,7 +273,7 @@ stt.dispose()`,
     task: 'Image captioning',
     tagline: 'One sentence for any image, in nine languages.',
     description:
-      'Describe any image in one sentence, in English, Spanish, Portuguese, French, German, Arabic, Chinese, Japanese or Korean. Useful for alt text, search indexing and accessibility — generated on-device, no image ever leaves the page.',
+      'Describe any image in one sentence, in English, Spanish, Portuguese, French, German, Arabic, Chinese, Japanese or Korean. Useful for alt text, search indexing and accessibility. Generated on-device, no image ever leaves the page.',
     packagePath: 'runonweb/caption',
     input: 'image',
     status: 'beta',
@@ -288,10 +297,10 @@ stt.dispose()`,
     ],
     bench: { webgpu: '0.7–1.2 s', wasm: '~30 s' },
     notes: [
-      'LFM2.5-VL-450M (Liquid AI, Nov 2025). A small vision-language model, prompted for captions — not a dedicated captioner.',
+      'LFM2.5-VL-450M (Liquid AI, Nov 2025). A small vision-language model, prompted for captions, not a dedicated captioner.',
       'Pass `language` (`en`, `es`, `pt`, `fr`, `de`, `ar`, `zh`, `ja`, `ko`) to caption in that language. Other languages are best-effort.',
       'Pass `detail: "detailed"` or `"more"` for longer captions. Default is short alt text. `onPartial` streams the text as it is generated.',
-      'License: LFM Open License v1.0 — free for individuals and companies under USD 10M annual revenue. Above that, Liquid AI requires a commercial license. Not OSI-approved; the rest of the catalog is Apache-2.0 or MIT.',
+      'License: LFM Open License v1.0. Free for individuals and companies under USD 10M annual revenue. Above that, Liquid AI requires a commercial license. Not OSI-approved; the rest of the catalog is Apache-2.0 or MIT.',
       'WebGPU is the fast path (fp16 vision + q4f16 decoder, about a second per caption). WASM works but takes ~30 s per caption.',
       'It is a generative model: captions can hallucinate details. Review before publishing.',
     ],
@@ -330,7 +339,7 @@ captioner.dispose()`,
       'Turn a single photo into a depth map. Great for parallax effects, portrait blur or 3D-ish previews without any server round-trip.',
     packagePath: 'runonweb/depth',
     input: 'image',
-    status: 'beta',
+    status: 'available',
     webgpu: 'recommended',
     hue: '#b28cff',
     icon: [
@@ -344,15 +353,16 @@ captioner.dispose()`,
       '------------',
     ],
     samples: [
-      { kind: 'image', label: 'Lake', src: '/samples/lake.png' },
-      { kind: 'image', label: 'Street', src: '/samples/street.jpg' },
-      { kind: 'image', label: 'House', src: '/samples/house.jpg' },
-      { kind: 'image', label: 'Car', src: '/samples/car.png' },
+      { kind: 'image', label: 'Obelisco', src: '/samples/ba-obelisco.jpg' },
+      { kind: 'image', label: 'Congreso', src: '/samples/ba-congreso.jpg' },
+      { kind: 'image', label: 'Caminito', src: '/samples/ba-caminito.jpg' },
+      { kind: 'image', label: 'Barolo', src: '/samples/ba-barolo.jpg' },
     ],
     bench: { webgpu: '0.8 s · 640×480', wasm: '5.6 s' },
     notes: [
       'Output is a grayscale PNG: brighter means closer.',
       'The Small variant is Apache-2.0; larger Depth Anything models are not.',
+      'Sample photos, resized: Obelisco by Roberto Fiadone (CC BY-SA 4.0), Congreso by Jorge Royan (CC BY-SA 3.0), Caminito by Lars Curfs (CC BY-SA 3.0 NL), Palacio Barolo by Beatrice Murch (CC BY 2.0).',
     ],
     weights: {
       id: 'onnx-community/depth-anything-v2-small',
@@ -381,10 +391,10 @@ estimator.dispose()`,
     task: 'Object detection',
     tagline: 'Boxes and labels for 80 everyday objects.',
     description:
-      'Find and label objects in an image with bounding boxes. People, cars, cats, cups, laptops — 80 COCO classes detected locally with RF-DETR Nano.',
+      'Find and label objects in an image with bounding boxes. People, cars, cats, cups, laptops: 80 COCO classes detected locally with RF-DETR Nano.',
     packagePath: 'runonweb/detect',
     input: 'image',
-    status: 'beta',
+    status: 'available',
     webgpu: 'none',
     hue: '#ff5fa8',
     icon: [
@@ -398,14 +408,14 @@ estimator.dispose()`,
       '##........##',
     ],
     samples: [
-      { kind: 'image', label: 'Street', src: '/samples/street.jpg' },
+      { kind: 'image', label: 'Pizzas', src: '/samples/pizzas.jpg' },
       { kind: 'image', label: 'Football', src: '/samples/football.jpg' },
       { kind: 'image', label: 'Cats', src: '/samples/cats.jpg' },
       { kind: 'image', label: 'Airport', src: '/samples/airport.jpg' },
     ],
     bench: { wasm: '~1 s' },
     notes: [
-      'RF-DETR Nano (2025). 80 COCO classes — people, cars, animals, furniture and more.',
+      'RF-DETR Nano (2025). 80 COCO classes: people, cars, animals, furniture and more.',
       'WASM only for now. WebGPU is skipped: this ONNX export collapses confidence scores.',
       'Boxes are returned in pixel coordinates of the original image.',
       'Tune `threshold` to trade recall for precision.',
@@ -438,7 +448,7 @@ detector.dispose()`,
     task: 'Text embeddings',
     tagline: 'Semantic search in 23 MB.',
     description:
-      'Turn sentences into 384-dimensional vectors for semantic search, clustering or deduplication. Compare meaning, not keywords — in the browser, in milliseconds.',
+      'Turn sentences into 384-dimensional vectors for semantic search, clustering or deduplication. Compare meaning, not keywords, in the browser, in milliseconds.',
     packagePath: 'runonweb/embed',
     input: 'text',
     status: 'beta',
@@ -503,6 +513,195 @@ cosineSimilarity(embeddings[0], embeddings[1]) // ~0.7
 cosineSimilarity(embeddings[0], embeddings[2]) // ~0.0
 
 embedder.dispose()`,
+  },
+  {
+    slug: 'classify',
+    name: 'Classify',
+    task: 'Text classification',
+    tagline: 'Ask typed questions about any text. Get probabilities.',
+    description:
+      'Route a ticket, rate a review or flag a comment: yes/no, multiple-choice and rating questions about one text, answered with calibrated probabilities in a single call. Runs Kev, an open Jev-style decision model, in the tab. No text is generated.',
+    packagePath: 'runonweb/classify',
+    input: 'text',
+    status: 'available',
+    webgpu: 'recommended',
+    hue: '#ffb3c7',
+    icon: [
+      '....##......',
+      '....##......',
+      '....##......',
+      '....##....++',
+      '.++.##....++',
+      '.++.##.++.++',
+      '.++.##.++.++',
+      '############',
+    ],
+    samples: [
+      {
+        kind: 'text',
+        label: 'Ticket',
+        text: 'Shoes arrived two weeks late and in the wrong size. Also I see two charges on my card.',
+        extra: kevQuestions({
+          department: {
+            type: 'choice',
+            instructions: 'Which team should handle this?',
+            criteria: {
+              returns: 'Exchanges, refunds, wrong or damaged items',
+              shipping: 'Delivery status, delays, lost packages',
+              billing: 'Charges, invoices, payment problems',
+            },
+          },
+          escalate: { type: 'noul', instructions: 'Does this need urgent human attention?' },
+          frustration: {
+            type: 'score',
+            instructions: 'How frustrated is the customer?',
+            criteria: ['Calm', 'Frustrated', 'Very angry'],
+          },
+        }),
+      },
+      {
+        kind: 'text',
+        label: 'Review',
+        text: "The new update is amazing! Battery life doubled and the camera is way sharper. Best phone I've owned.",
+        extra: kevQuestions({
+          sentiment: {
+            type: 'choice',
+            instructions: 'What is the sentiment of this review?',
+            criteria: { positive: null, neutral: null, negative: null },
+          },
+          stars: {
+            type: 'score',
+            instructions: 'How many stars would this reviewer give?',
+            criteria: ['1 star', '2 stars', '3 stars', '4 stars', '5 stars'],
+          },
+          mentions_price: { type: 'noul', instructions: 'Does the review mention the price?' },
+        }),
+      },
+      {
+        kind: 'text',
+        label: 'Comment',
+        text: "You're an idiot and nobody wants you here. Log off before I find where you live.",
+        extra: kevQuestions({
+          toxic: { type: 'noul', instructions: 'Is this comment toxic?' },
+          category: {
+            type: 'choice',
+            instructions: 'What kind of comment is this?',
+            criteria: {
+              threat: 'Threatens violence or harm',
+              insult: 'Insults or demeans someone',
+              spam: 'Ads or repeated links',
+              fine: 'Nothing wrong with it',
+            },
+          },
+          severity: {
+            type: 'score',
+            instructions: 'How severe is it?',
+            criteria: ['Harmless', 'Rude', 'Abusive', 'Dangerous'],
+          },
+        }),
+      },
+      {
+        kind: 'text',
+        label: 'Sales lead',
+        text: 'Hi, we are a 400-person logistics company evaluating tools to replace our spreadsheets. Budget approved for Q3. Can we get a demo next week?',
+        extra: kevQuestions({
+          intent: {
+            type: 'choice',
+            instructions: 'What does the sender want?',
+            criteria: {
+              demo: 'Wants a demo or sales call',
+              support: 'Needs help with an existing account',
+              job: 'Applying for a job',
+              other: null,
+            },
+          },
+          qualified: { type: 'noul', instructions: 'Is this a qualified sales lead (has budget and a real need)?' },
+          urgency: {
+            type: 'score',
+            instructions: 'How soon do they want to buy?',
+            criteria: ['No timeline', 'This year', 'This quarter', 'This month'],
+          },
+        }),
+      },
+      {
+        kind: 'text',
+        label: 'Return window',
+        text: 'Policy: items can be returned within 14 days of delivery.\nOrder delivered on June 26, 2026.\nCustomer asked for a refund on July 18, 2026.',
+        extra: kevQuestions(
+          { eligible: { type: 'noul', instructions: 'Is the refund request inside the return window?' } },
+          { dateFacts: true }
+        ),
+      },
+      {
+        kind: 'text',
+        label: 'Ticket · ES',
+        text: 'Hola, desde ayer no puedo iniciar sesión en la app. Me dice contraseña incorrecta pero la acabo de cambiar. ¿Me ayudáis?',
+        extra: kevQuestions({
+          team: {
+            type: 'choice',
+            instructions: '¿Qué equipo debe atender este ticket?',
+            criteria: {
+              billing: 'Pagos y reembolsos',
+              shipping: 'Problemas de envío',
+              access: 'Acceso a la cuenta e inicio de sesión',
+            },
+          },
+          sentiment: {
+            type: 'choice',
+            instructions: 'Sentiment of the message',
+            criteria: { positive: null, neutral: null, negative: null },
+          },
+          spam: { type: 'noul', instructions: 'Is this message spam?' },
+        }),
+      },
+    ],
+    bench: { webgpu: '~120 ms / 3 questions', wasm: '~4 s / 3 questions' },
+    notes: [
+      'Kev-0.8B by Jared Palmer: a LoRA and a pointer head on Qwen3.5-0.8B-Base, trained to answer typed questions. Each question scores its options in one forward pass; nothing is generated, so answers are probabilities, not text.',
+      'Request and answer shapes are TypeSafe’s System One API (`noul` · `choice` · `score`), the same JSON a Kev or Jev server accepts. Question ids are yours; the model never sees them.',
+      'Each question only sees the text and itself. The text is read once and its cache is reused for every question.',
+      'Probabilities are calibrated with the temperature fitted for the checkpoint (~2.35). Pass `temperature: 1` for raw logits. Option order can still change an answer.',
+      'Kev can’t subtract dates. `dateFacts: true` appends the day count between every pair of absolute dates in the text, as Kev’s `KEV_DATE_FACTS` does.',
+      'Kev-0.8B is the smallest Kev. It gets 0.70 on sources it wasn’t trained on (Kev-4B: 0.84, Jev: 0.86), is weak on general knowledge and best in English. Test it on your own data before trusting a threshold.',
+      'runonweb merged the LoRA and exported the backbone to ONNX: int4 weights, Gated DeltaNet layers in int8, fp32 activations. Probabilities differ from Kev’s PyTorch fp32 path by ~0.03 on average. Recipe in `training/kev-onnx`.',
+    ],
+    weights: {
+      id: 'runonweb/kev-0.8b-ONNX',
+      baseModel: 'Kev-0.8B (Qwen3.5-0.8B-Base + LoRA)',
+      author: 'Jared Palmer · base: Qwen',
+      license: 'Apache-2.0',
+      sourceUrl: 'https://huggingface.co/jaredpalmer/kev-0.8b',
+      size: '~750 MB',
+      runsOn: 'int4 + int8 on WebGPU · same file on WASM',
+    },
+    usageSnippet: `import { Classifier } from 'runonweb/classify'
+
+const classifier = new Classifier()
+await classifier.load()
+
+const { answers } = await classifier.classify({
+  state: 'Shoes arrived two weeks late and in the wrong size.',
+  questions: {
+    department: {
+      type: 'choice',
+      instructions: 'Which team should handle this?',
+      criteria: { returns: null, shipping: null, billing: null },
+    },
+    escalate: { type: 'noul', instructions: 'Does this need urgent human attention?' },
+    frustration: {
+      type: 'score',
+      instructions: 'How frustrated is the customer?',
+      criteria: ['Calm', 'Frustrated', 'Very angry'],
+    },
+  },
+})
+
+answers.department.choice        // "returns"
+answers.department.probabilities // { returns: 0.50, shipping: 0.44, billing: 0.06 }
+answers.escalate.noul            // 0.51 = p(yes)
+answers.frustration.score        // 1.21 on a 0–2 scale
+
+classifier.dispose()`,
   },
   {
     slug: 'translate',
@@ -630,7 +829,7 @@ PAIRS['en-ja'] // { architecture: 'base-memory', bytes: 43849787, comet: 0.90, �
       'S1-mini by Superwhisper (keep that exact name). Fine-tuned from Qwen3-0.6B to do one job: normalize English ASR output. It is not a chat model.',
       'Pass `styling` (`casual` · `semi-casual` · `semi-formal` · `formal`), `structure` (`prose` · `lists`) and `context` (`general` · `email`). Defaults are semi-formal prose.',
       'English only. Keep a single pass under ~1,000 tokens; chunk longer transcripts at sentence boundaries.',
-      'Filler-only input (`um`, `uh`) returns an empty string — that is a valid result, not a failure.',
+      'Filler-only input (`um`, `uh`) returns an empty string. That is a valid result, not a failure.',
       'WebGPU prefers q4f16 (~339 MB) and falls back to q4 (~385 MB) if the session fails to start. WASM uses q4.',
     ],
     weights: {
@@ -752,7 +951,7 @@ emojifier.dispose()`,
       'Supertonic 2 is OpenRAIL-M: open weights with use restrictions (no impersonation, no deception, no illegal use). The rest of the TTS sizes are Apache-2.0.',
       'Pass `size: "tiny"` for KittenTTS nano (~28 MB, 8 English voices, WASM).',
       'Audio streams sentence by sentence via `speakStream`. WebGPU is several times faster on `small` and `multi`; WASM works everywhere.',
-      'Pass `voice` to pick a speaker (`af_heart` / `bella` / `st_f1`). Kokoro Spanish and French download a local eSpeak-NG WASM (~18 MB) on first use — nothing is uploaded.',
+      'Pass `voice` to pick a speaker (`af_heart` / `bella` / `st_f1`). Kokoro Spanish and French download a local eSpeak-NG WASM (~18 MB) on first use. Nothing is uploaded.',
     ],
     weights: {
       id: 'onnx-community/Kokoro-82M-v1.0-ONNX',
@@ -769,7 +968,7 @@ const tts = new TextToSpeech({ size: 'small', voice: 'af_heart' })
 await tts.load()
 
 for await (const chunk of tts.speakStream('Hello from the browser')) {
-  // chunk.audio is 24 kHz PCM — play as it arrives
+  // chunk.audio is 24 kHz PCM. Play as it arrives
 }
 
 const wav = await tts.speakToBlob('Hola mundo', { voice: 'ef_dora' })
@@ -787,7 +986,7 @@ tts.dispose()`,
     task: 'Image generation',
     tagline: 'A picture from a sentence. On your GPU.',
     description:
-      'Generate images from a text prompt entirely in the tab. Bonsai Image 4B runs on WebGPU — no API key, no upload, nothing leaves the device after the first download.',
+      'Generate images from a text prompt entirely in the tab. Bonsai Image 4B runs on WebGPU. No API key, no upload, nothing leaves the device after the first download.',
     packagePath: 'runonweb/image',
     input: 'text',
     status: 'beta',
@@ -811,7 +1010,7 @@ tts.dispose()`,
     ],
     bench: { webgpu: '~10–40 s · 512²' },
     notes: [
-      'Bonsai Image 4B (Prism ML, 2026) is a 1-bit / 1.58-bit FLUX.2 Klein deployment. WebGPU only — there is no WASM path.',
+      'Bonsai Image 4B (Prism ML, 2026) is a 1-bit / 1.58-bit FLUX.2 Klein deployment. WebGPU only. There is no WASM path.',
       'Default `binary` is the smaller payload (~3.4 GB). Pass `size: "ternary"` (~3.9 GB) for the quality-oriented weights.',
       'Tuned for 4 FlowMatch-Euler steps at guidance 1.0. More steps rarely help and can add artifacts. Negative prompts are not used.',
       'Default output is 512×512. Native training resolution is 1024×1024; sides must be multiples of 16 (32 recommended).',

@@ -16,7 +16,7 @@ const seo = modelSeo(model)
 <Layout {...seo}>
   <ModelShell model={model}>
     <div slot="demo" class="space-y-5">
-      <DemoStatus prefix="det" idle="Pick a sample, open the webcam, or drop an image — it runs right away" />
+      <DemoStatus prefix="det" idle="Pick a sample, open the webcam, or drop an image. It runs right away" />
       <Samples prefix="det" samples={model.samples}>
         <button
           type="button"

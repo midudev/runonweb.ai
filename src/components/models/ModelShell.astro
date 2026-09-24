@@ -70,8 +70,8 @@ const specs: Spec[] = [
             [
               ['Download', model.weights.size],
               ['Backend', model.webgpu === 'none' ? 'WASM' : 'WebGPU'],
-              ['WebGPU', model.bench.webgpu ?? '—'],
-              ['WASM', model.bench.wasm ?? '—'],
+              ['WebGPU', model.bench.webgpu ?? '-'],
+              ['WASM', model.bench.wasm ?? '-'],
             ].map(([k, v]) => (
               <div class="bg-bg px-6 py-3.5">
                 <dt class="readout text-fg-3">{k}</dt>

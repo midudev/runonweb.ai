@@ -1,4 +1,5 @@
 import { ImageGenerator, isImageGenerationSupported, type ImageSize } from 'runonweb/image'
+import { createImagineStage } from './imagine-stage.ts'
 import { bindSamples, createDemoUI, formatMs, onDemoPage } from './ui.ts'
 
 onDemoPage('img', () => {
@@ -8,6 +9,11 @@ const inputEl = ui.el<HTMLTextAreaElement>('input')
 const runBtn = ui.el<HTMLButtonElement>('run')
 const downloadLink = ui.el<HTMLAnchorElement>('download')
 const preview = ui.el('preview')
+const stageEl = ui.el('stage')
+const stage = (() => {
+  const canvas = ui.el<HTMLCanvasElement>('canvas')
+  return canvas ? createImagineStage(canvas) : null
+})()
 const resultImg = ui.el<HTMLImageElement>('result')
 const seedEl = ui.el('seed')
 const sizeBtns = [...document.querySelectorAll<HTMLButtonElement>('[data-img-size]')]
@@ -27,10 +33,22 @@ function currentRes(): number {
   return Number(pressed?.dataset.imgRes ?? 512)
 }
 
+function showStage(on: boolean) {
+  if (on) {
+    if (preview) preview.hidden = true
+    if (stageEl) stageEl.hidden = false
+    stage?.start()
+    return
+  }
+  stage?.stop()
+  if (stageEl) stageEl.hidden = true
+}
+
 function setBusy(busy: boolean) {
   if (runBtn) runBtn.disabled = busy
   for (const btn of sizeBtns) btn.disabled = busy
   for (const btn of resBtns) btn.disabled = busy
+  showStage(busy)
 }
 
 function setPressed(buttons: HTMLButtonElement[], active: HTMLButtonElement) {
@@ -38,6 +56,7 @@ function setPressed(buttons: HTMLButtonElement[], active: HTMLButtonElement) {
 }
 
 function showImage(blob: Blob, seed: number) {
+  showStage(false)
   if (objectUrl) URL.revokeObjectURL(objectUrl)
   objectUrl = URL.createObjectURL(blob)
   if (resultImg) resultImg.src = objectUrl
@@ -93,7 +112,10 @@ async function runGenerate() {
       const result = await model.generate(prompt, {
         width: side,
         height: side,
-        onStep: ({ step, steps }) => ui.setStatus(`Denoising ${step}/${steps}…`),
+        onStep: ({ step, steps }) => {
+          ui.setStatus(`Denoising ${step}/${steps}…`)
+          stage?.setProgress(steps > 0 ? step / steps : 0)
+        },
       })
       if (timingEl) timingEl.textContent = formatMs(performance.now() - t0)
       showImage(result.image, result.seed)
@@ -118,7 +140,7 @@ runBtn?.addEventListener('click', () => void runGenerate())
 for (const btn of sizeBtns) {
   btn.addEventListener('click', () => {
     setPressed(sizeBtns, btn)
-    ui.setStatus(`${btn.dataset.imgSize} selected — generate to download weights`)
+    ui.setStatus(`${btn.dataset.imgSize} selected. Generate to download weights`)
   })
 }
 for (const btn of resBtns) {
@@ -128,13 +150,14 @@ bindSamples(ui, {
   onText: (s) => {
     if (inputEl) inputEl.value = s.text
     ui.setError(null)
-    ui.setStatus('Prompt ready — press Generate')
+    ui.setStatus('Prompt ready. Press Generate')
     inputEl?.focus()
   },
 })
 
 return () => {
   if (objectUrl) URL.revokeObjectURL(objectUrl)
+  stage?.stop()
   generator?.dispose()
   generator = null
 }

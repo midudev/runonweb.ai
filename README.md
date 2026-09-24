@@ -11,7 +11,6 @@ pnpm install
 pnpm dev        # astro dev --background is preferred, see AGENTS.md
 pnpm check      # astro check (types)
 pnpm build
-pnpm deploy     # astro build && wrangler deploy (Cloudflare Workers)
 ```
 
 ## Package
@@ -23,6 +22,7 @@ import { ImageCaptioner } from 'runonweb/caption'
 import { DepthEstimator } from 'runonweb/depth'
 import { ObjectDetector } from 'runonweb/detect'
 import { TextEmbedder, cosineSimilarity } from 'runonweb/embed'
+import { Classifier } from 'runonweb/classify'
 import { Translator, LANGS } from 'runonweb/translate'
 import { Emojifier } from 'runonweb/emoji'
 import { TextToSpeech } from 'runonweb/tts'
@@ -41,6 +41,7 @@ Source and API docs: [`packages/runonweb`](./packages/runonweb).
 | `runonweb/depth` | Depth Anything V2 Small | Apache-2.0 | ~50 MB / ~27 MB |
 | `runonweb/detect` | DETR ResNet-50 (Meta) | Apache-2.0 | ~85 MB / ~43 MB |
 | `runonweb/embed` | all-MiniLM-L6-v2 (sentence-transformers) | Apache-2.0 | ~45 MB / ~23 MB |
+| `runonweb/classify` | Kev-0.8B (Jared Palmer) on Qwen3.5-0.8B-Base, LoRA merged + ONNX by runonweb (`training/kev-onnx`) | Apache-2.0 | ~750 MB (same file on both) |
 | `runonweb/translate` | Firefox Translations (Mozilla, Marian NMT via Bergamot WASM) | MPL-2.0 | WASM only · ~22–49 MB per pair |
 | `runonweb/emoji` | text2emoji-tiny (trained by runonweb, `training/text2emoji`) | MIT | WASM only · ~4 MB |
 | `runonweb/tts` | Kokoro 82M (hexgrad) / Supertonic 2 (Supertone) / KittenTTS nano | Apache-2.0 · OpenRAIL-M (Supertonic) | ~326 MB (WebGPU) or ~92 MB (WASM) / ~262 MB / ~28 MB |
@@ -55,6 +56,7 @@ Sizes are approximate. The catalog (names, colors, base model, license) lives in
 - ORMBG and BiRefNet fail in ONNX Runtime Web (`ceil()` MaxPool unsupported / abort). MODNet works but is portrait-oriented.
 - BEN2 (the remove-bg model) loads on WebGPU, then `OrtRun` fails: its fused LayerNorm is fp16 in / fp32 scale+bias+out, and the shader does not compile (`Invalid ShaderModule "LayerNorm"`). Pinned to WASM until `onnxruntime-web` includes [onnxruntime#32629](https://github.com/microsoft/onnxruntime/pull/32629).
 - On a laptop GPU, WebGPU fp16 is 5–7× faster than WASM q8 for vision models.
+- The default `onnxruntime-web` entry is the JSEP build: its `MatMulNBits` only runs 2/4-bit weights, so 8-bit layers fail at session creation (`nbits_ == 4 || nbits_ == 2 was false`). `onnxruntime-web/webgpu` (the native WebGPU EP, also what Transformers.js uses) runs them. `runonweb/classify` imports that entry.
 
 ## Site
 
@@ -62,37 +64,12 @@ Sizes are approximate. The catalog (names, colors, base model, license) lives in
 |------|-------------|
 | `/` | Landing + catalog |
 | `/models` | All models grouped by input |
-| `/models/<slug>` | Model page: hero, live demo, code, specs, FAQ (`stt`, `remove-bg`, `caption`, `depth`, `detect`, `embed`, `translate`, `emoji`, `tts`) |
+| `/models/<slug>` | Model page: hero, live demo, code, specs, FAQ (`stt`, `remove-bg`, `caption`, `depth`, `detect`, `embed`, `classify`, `translate`, `emoji`, `tts`) |
 | `/docs` | Install, the shared pattern, API for every module |
 
 Sample media for the one-click demos lives in `public/samples/` (images and speech clips taken from the Transformers.js docs dataset `Xenova/transformers.js-docs`; no explicit license is published there, so replace them with owned or CC0 media before a public launch). Sample definitions are the `samples` field in `src/data/models.ts`.
 
 Design: dark "instrument panel". Geist for headings and body, Geist Mono for code, **Geist Pixel as the machine voice** (readouts: sizes, timings, backends, section numbers, status bars). Accent is phosphor amber (#ffb340). One hue per model used for LEDs and a hand-drawn 12×8 pixel icon per task (`icon` rows in `models.ts`, rendered by `PixelIcon.astro`). Favicon set is generated from the logo (`public/favicon.svg`, PNGs via sharp). The landing hero is an ordered-dither field computed by the page every frame (`src/scripts/hero-dither.ts`). Bench numbers in `models.ts` are measured, not estimated.
-
-## Deploy (Cloudflare Workers)
-
-The site is fully static (OG images are prerendered at build time). There is no `@astrojs/cloudflare` adapter — Wrangler serves `dist/` as [Workers static assets](https://developers.cloudflare.com/workers/static-assets/).
-
-```bash
-pnpm build
-pnpm exec wrangler login    # once
-pnpm deploy                 # build + wrangler deploy
-```
-
-Local preview of the Worker (same routing as production):
-
-```bash
-pnpm preview:worker
-```
-
-Attach `runonweb.ai` as a custom domain in the Cloudflare dashboard (Workers & Pages → runonweb → Settings → Domains).
-
-**CI:** push to `main` runs [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml). Add repository secrets `CLOUDFLARE_API_TOKEN` (Workers edit permission) and `CLOUDFLARE_ACCOUNT_ID`. Alternatively, import the repo in **Workers Builds** with build command `pnpm build` and deploy command `npx wrangler deploy`.
-
-Cloudflare Workers reject static files over 25 MiB. `pnpm build` drops anything larger from `dist/` (`scripts/omit-oversized-assets.mjs`):
-
-- Firefox Translations `.bin` weights (~30 MB) — the translate demo loads them from Hugging Face. `pnpm models:translate` is only for local offline copies.
-- ONNX Runtime `jsep.wasm` (~27 MB) — Transformers.js, OCR and Kitten TTS already point `wasmPaths` at jsDelivr.
 
 ## Adding a module
 

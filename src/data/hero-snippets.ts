@@ -77,6 +77,15 @@ await cleaner.load()
 const { text } = await cleaner.clean(rawTranscript)
 // "I need to send the report by Thursday."`,
 
+  classify: `import { Classifier } from 'runonweb/classify'
+
+const classifier = new Classifier()
+const { answers } = await classifier.classify({
+  state: 'I was charged twice. Please fix this ASAP.',
+  questions: { billing: { type: 'noul', instructions: 'Is this about billing?' } },
+})
+answers.billing.noul // 0.91 = p(yes)`,
+
   emoji: `import { Emojifier } from 'runonweb/emoji'
 
 const emojifier = new Emojifier({ modelPath: '/models/' })

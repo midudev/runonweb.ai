@@ -1,5 +1,5 @@
 {
-  "name": "runonweb — AI models that run in the browser",
+  "name": "runonweb: AI models that run in the browser",
   "short_name": "runonweb",
   "description": "Free, open-source AI modules that run in the browser. Speech, vision and text on WebGPU or WASM.",
   "start_url": "/",

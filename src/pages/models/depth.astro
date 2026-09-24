@@ -16,7 +16,7 @@ const seo = modelSeo(model)
 <Layout {...seo}>
   <ModelShell model={model}>
     <div slot="demo" class="space-y-5">
-      <DemoStatus prefix="dep" idle="Pick a sample or drop an image — it runs right away" />
+      <DemoStatus prefix="dep" idle="Pick a sample or drop an image. It runs right away" />
       <Samples prefix="dep" samples={model.samples} />
       <ImageDropzone prefix="dep" />
       <div class="flex flex-wrap gap-2">

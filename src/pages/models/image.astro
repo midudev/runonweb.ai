@@ -74,9 +74,29 @@ const resolutions = [
         <Button as="a" attr="data-img-download" hidden download="runonweb-imagine.png">Download PNG</Button>
         <span data-img-seed class="readout text-fg-3"></span>
       </div>
+      <div data-img-stage hidden class="imagine-stage">
+        <canvas data-img-canvas class="imagine-canvas pixelated" aria-hidden="true"></canvas>
+      </div>
       <div data-img-preview hidden class="overflow-hidden border border-line bg-bg">
         <img data-img-result alt="Generated image" class="mx-auto max-h-[32rem] w-full object-contain" />
       </div>
+      <style>
+        .imagine-stage {
+          width: min(100%, 32rem);
+          margin-inline: auto;
+          overflow: hidden;
+          border: 1px solid var(--color-line);
+          background: var(--color-bg);
+        }
+        .imagine-stage[hidden] {
+          display: none;
+        }
+        .imagine-canvas {
+          display: block;
+          width: 100%;
+          height: auto;
+        }
+      </style>
     </div>
   </ModelShell>
 </Layout>

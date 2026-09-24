@@ -13,6 +13,7 @@ const downloadLink = ui.el<HTMLAnchorElement>('download')
 const beforeImg = ui.el<HTMLImageElement>('before')
 const afterImg = ui.el<HTMLImageElement>('after')
 const previewRow = ui.el('preview')
+const stage = ui.el('stage')
 const compare = ui.el<CompareSlider>('compare')
 
 let remover: RemoveBackground | null = null
@@ -21,6 +22,7 @@ let selectedFile: File | null = null
 function setBusy(busy: boolean) {
   if (runBtn) runBtn.disabled = busy || !selectedFile
   if (fileInput) fileInput.disabled = busy
+  stage?.toggleAttribute('data-scanning', busy)
 }
 
 function showFile(file: File) {
@@ -28,7 +30,7 @@ function showFile(file: File) {
   urls.revokeAll()
   if (beforeImg) {
     beforeImg.src = urls.add(file)
-    if (compare) fitCompareToImage(compare, beforeImg)
+    if (stage) fitCompareToImage(stage, beforeImg)
   }
   if (afterImg) afterImg.removeAttribute('src')
   if (compare) {

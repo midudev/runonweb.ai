@@ -17,9 +17,9 @@ const device = await resolveDevice() // 'webgpu' | 'wasm'`
 
 <Layout
   title="Docs: install and run AI models in the browser"
-  description="Install runonweb and use any module in a few lines: speech-to-text, transcript cleanup, background removal, captioning, depth, object detection, OCR, embeddings, translation, TTS and image generation. API, base model and notes for every task."
+  description="Install runonweb and use any module in a few lines: speech-to-text, transcript cleanup, background removal, captioning, depth, object detection, OCR, embeddings, text classification, translation, TTS and image generation. API, base model and notes for every task."
   ogImage="/og/docs.png"
-  ogImageAlt="runonweb docs — install and use browser AI modules"
+  ogImageAlt="runonweb docs: install and use browser AI modules"
   ogType="article"
   jsonLd={docsJsonLd()}
 >
@@ -76,7 +76,7 @@ const device = await resolveDevice() // 'webgpu' | 'wasm'`
           <section id={m.slug} class="mt-16 scroll-mt-8 border-t border-line pt-12" aria-labelledby={`${m.slug}-title`}>
             <div class="flex flex-wrap items-center gap-3">
               <span class="led" style={`--hue:${m.hue}`} />
-              <h2 id={`${m.slug}-title`} class="text-[30px] leading-none">{m.name} <span class="sr-only">— {m.task}</span></h2>
+              <h2 id={`${m.slug}-title`} class="text-[30px] leading-none">{m.name} <span class="sr-only">: {m.task}</span></h2>
               <span class="tag" aria-hidden="true">{m.task}</span>
               <a href={`/models/${m.slug}`} class="ml-auto font-mono text-[12px] text-fg-2 underline underline-offset-4">
                 Live demo →

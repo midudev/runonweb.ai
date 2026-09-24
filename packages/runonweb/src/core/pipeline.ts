@@ -46,6 +46,11 @@ export async function loadPipeline(options: PipelineLoadOptions): Promise<Loaded
   options.onProgress?.({ status: 'loading', progress: 0 })
 
   const { pipeline, env } = await import('@huggingface/transformers')
+  // The threaded WASM build crashes with "memory access out of bounds" when the
+  // page is not cross-origin isolated (no SharedArrayBuffer). It happens at the
+  // end of the first download and a reload works. One thread avoids the spawn.
+  const wasm = env.backends?.onnx?.wasm
+  if (wasm && !globalThis.crossOriginIsolated) wasm.numThreads = 1
   if (options.modelPath) {
     env.allowLocalModels = true
     env.allowRemoteModels = false

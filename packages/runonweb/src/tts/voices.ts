@@ -51,24 +51,24 @@ export const TTS_VOICES: readonly TTSVoice[] = [
   { id: 'em_alex', name: 'Alex', locale: 'es', gender: 'male', grade: 'D', size: 'small' },
   { id: 'em_santa', name: 'Santa', locale: 'es', gender: 'male', grade: 'D', size: 'small' },
   { id: 'ff_siwis', name: 'Siwis', locale: 'fr', gender: 'female', grade: 'B-', size: 'small' },
-  { id: 'bella', name: 'Bella', locale: 'en-US', gender: 'female', grade: '—', size: 'tiny' },
-  { id: 'luna', name: 'Luna', locale: 'en-US', gender: 'female', grade: '—', size: 'tiny' },
-  { id: 'rosie', name: 'Rosie', locale: 'en-US', gender: 'female', grade: '—', size: 'tiny' },
-  { id: 'kiki', name: 'Kiki', locale: 'en-US', gender: 'female', grade: '—', size: 'tiny' },
-  { id: 'jasper', name: 'Jasper', locale: 'en-US', gender: 'male', grade: '—', size: 'tiny' },
-  { id: 'bruno', name: 'Bruno', locale: 'en-US', gender: 'male', grade: '—', size: 'tiny' },
-  { id: 'hugo', name: 'Hugo', locale: 'en-US', gender: 'male', grade: '—', size: 'tiny' },
-  { id: 'leo', name: 'Leo', locale: 'en-US', gender: 'male', grade: '—', size: 'tiny' },
-  { id: 'st_f1', name: 'F1', locale: 'multi', gender: 'female', grade: '—', size: 'multi' },
-  { id: 'st_f2', name: 'F2', locale: 'multi', gender: 'female', grade: '—', size: 'multi' },
-  { id: 'st_f3', name: 'F3', locale: 'multi', gender: 'female', grade: '—', size: 'multi' },
-  { id: 'st_f4', name: 'F4', locale: 'multi', gender: 'female', grade: '—', size: 'multi' },
-  { id: 'st_f5', name: 'F5', locale: 'multi', gender: 'female', grade: '—', size: 'multi' },
-  { id: 'st_m1', name: 'M1', locale: 'multi', gender: 'male', grade: '—', size: 'multi' },
-  { id: 'st_m2', name: 'M2', locale: 'multi', gender: 'male', grade: '—', size: 'multi' },
-  { id: 'st_m3', name: 'M3', locale: 'multi', gender: 'male', grade: '—', size: 'multi' },
-  { id: 'st_m4', name: 'M4', locale: 'multi', gender: 'male', grade: '—', size: 'multi' },
-  { id: 'st_m5', name: 'M5', locale: 'multi', gender: 'male', grade: '—', size: 'multi' },
+  { id: 'bella', name: 'Bella', locale: 'en-US', gender: 'female', grade: '', size: 'tiny' },
+  { id: 'luna', name: 'Luna', locale: 'en-US', gender: 'female', grade: '', size: 'tiny' },
+  { id: 'rosie', name: 'Rosie', locale: 'en-US', gender: 'female', grade: '', size: 'tiny' },
+  { id: 'kiki', name: 'Kiki', locale: 'en-US', gender: 'female', grade: '', size: 'tiny' },
+  { id: 'jasper', name: 'Jasper', locale: 'en-US', gender: 'male', grade: '', size: 'tiny' },
+  { id: 'bruno', name: 'Bruno', locale: 'en-US', gender: 'male', grade: '', size: 'tiny' },
+  { id: 'hugo', name: 'Hugo', locale: 'en-US', gender: 'male', grade: '', size: 'tiny' },
+  { id: 'leo', name: 'Leo', locale: 'en-US', gender: 'male', grade: '', size: 'tiny' },
+  { id: 'st_f1', name: 'F1', locale: 'multi', gender: 'female', grade: '', size: 'multi' },
+  { id: 'st_f2', name: 'F2', locale: 'multi', gender: 'female', grade: '', size: 'multi' },
+  { id: 'st_f3', name: 'F3', locale: 'multi', gender: 'female', grade: '', size: 'multi' },
+  { id: 'st_f4', name: 'F4', locale: 'multi', gender: 'female', grade: '', size: 'multi' },
+  { id: 'st_f5', name: 'F5', locale: 'multi', gender: 'female', grade: '', size: 'multi' },
+  { id: 'st_m1', name: 'M1', locale: 'multi', gender: 'male', grade: '', size: 'multi' },
+  { id: 'st_m2', name: 'M2', locale: 'multi', gender: 'male', grade: '', size: 'multi' },
+  { id: 'st_m3', name: 'M3', locale: 'multi', gender: 'male', grade: '', size: 'multi' },
+  { id: 'st_m4', name: 'M4', locale: 'multi', gender: 'male', grade: '', size: 'multi' },
+  { id: 'st_m5', name: 'M5', locale: 'multi', gender: 'male', grade: '', size: 'multi' },
 ]
 
 /** Languages Supertonic 2 (`multi`) can speak with any of its voices. */
@@ -118,7 +118,7 @@ export function voiceLabel(voice: TTSVoice): string {
   if (voice.locale === 'multi') return `${voice.name} · ${voice.gender}`
   const region =
     voice.locale === 'en-GB' ? 'British' : voice.locale === 'es' ? 'Spanish' : voice.locale === 'fr' ? 'French' : 'American'
-  const grade = voice.grade === '—' ? voice.gender : `${voice.gender} · ${voice.grade}`
+  const grade = voice.grade ? `${voice.gender} · ${voice.grade}` : voice.gender
   return `${voice.name} · ${region} ${grade}`
 }
 

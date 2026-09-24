@@ -21,7 +21,10 @@ function attr(name: string): Record<string, string> {
   <span {...attr('timing')} class="readout ml-auto text-accent"></span>
 </div>
 
-<progress {...attr('progress')} max="100" value="0" hidden class="progress h-1 w-full"></progress>
+<div {...attr('progress-row')} hidden class="flex items-center gap-3">
+  <progress {...attr('progress')} max="100" value="0" class="progress h-1 min-w-0 flex-1"></progress>
+  <span {...attr('speed')} hidden class="readout shrink-0 text-right text-accent"></span>
+</div>
 
 <p {...attr('error')} hidden role="alert" class="border border-danger/40 bg-danger/10 px-4 py-2.5 font-mono text-[13px] text-danger"></p>
 

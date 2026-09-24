@@ -1,7 +1,7 @@
 {
   "name": "runonweb",
   "version": "0.0.1",
-  "description": "Free browser ML modules — speech, vision, text. Runs locally with WebGPU or WASM.",
+  "description": "Free browser ML modules: speech, vision, text. Runs locally with WebGPU or WASM.",
   "type": "module",
   "license": "MIT",
   "exports": {
@@ -44,6 +44,11 @@
       "types": "./src/ocr/sizes.ts",
       "import": "./src/ocr/sizes.ts",
       "default": "./src/ocr/sizes.ts"
+    },
+    "./classify": {
+      "types": "./src/classify/index.ts",
+      "import": "./src/classify/index.ts",
+      "default": "./src/classify/index.ts"
     },
     "./embed": {
       "types": "./src/embed/index.ts",
@@ -114,6 +119,9 @@
     "background-removal",
     "ocr",
     "embeddings",
+    "classification",
+    "zero-shot",
+    "kev",
     "translation",
     "tts",
     "emoji",

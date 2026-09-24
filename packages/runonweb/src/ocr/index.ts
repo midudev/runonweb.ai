@@ -79,7 +79,10 @@ export class OCR {
   #onProgress?: ProgressCallback
   #service: PaddleOcrService | null = null
   #loading: Promise<void> | null = null
+  #pending: Promise<void> = Promise.resolve()
   #resolvedDevice: ResolvedDevice | null = null
+  #disposed = false
+  #disposeDone: Promise<void> | null = null
 
   constructor(options: OCROptions = {}) {
     this.#size = options.size ?? DEFAULT_OCR_SIZE
@@ -96,6 +99,7 @@ export class OCR {
   }
 
   async load(): Promise<void> {
+    if (this.#disposed) throw new Error('OCR model was disposed')
     if (this.#service) return
     if (this.#loading) return this.#loading
 
@@ -125,6 +129,11 @@ export class OCR {
         device: preferred,
       })
 
+      if (this.#disposed) {
+        await takeTurn(() => service.ocr.destroy())
+        return
+      }
+
       this.#service = service.ocr
       this.#resolvedDevice = service.device
       this.#onProgress?.({ status: 'ready', progress: 100 })
@@ -137,14 +146,51 @@ export class OCR {
     }
   }
 
-  async read(image: OCRImageInput): Promise<OCRResult> {
+  read(image: OCRImageInput): Promise<OCRResult> {
+    if (this.#disposed) return Promise.reject(new Error('OCR model was disposed'))
+    const job = this.#read(image)
+    this.#pending = this.#pending.then(
+      () => job.then(
+        () => undefined,
+        () => undefined,
+      ),
+    )
+    return job
+  }
+
+  /**
+   * Drop the sessions. Waits for an in-flight `read` so `destroy` cannot
+   * release a session that is still inside OrtRun.
+   */
+  async dispose(): Promise<void> {
+    if (this.#disposeDone) return this.#disposeDone
+    this.#disposed = true
+    this.#disposeDone = (async () => {
+      await this.#pending
+      await this.#loading
+      const service = this.#service
+      this.#service = null
+      this.#resolvedDevice = null
+      if (!service) return
+      await takeTurn(() => service.destroy())
+    })()
+    return this.#disposeDone
+  }
+
+  async #read(image: OCRImageInput): Promise<OCRResult> {
+    if (this.#disposed) throw new Error('OCR model was disposed')
     await this.load()
-    if (!this.#service) throw new Error('OCR model failed to load')
+    if (this.#disposed) throw new Error('OCR model was disposed')
+    const service = this.#service
+    if (!service) throw new Error('OCR model failed to load')
 
     this.#onProgress?.({ status: 'recognizing' })
     const pixels = await imageToPixels(image)
-    const raw = await this.#service.recognize(pixels)
-    const processed = this.#service.processRecognition(raw)
+    const raw = await takeTurn(() => {
+      if (this.#disposed) throw new Error('OCR model was disposed')
+      return service.recognize(pixels)
+    })
+    const processed = service.processRecognition(raw)
 
     const lines: OCRLine[] = raw.map((item) => ({
       text: item.text,
@@ -164,13 +210,6 @@ export class OCR {
       confidence: processed.confidence,
     }
   }
-
-  dispose(): void {
-    const service = this.#service
-    this.#service = null
-    this.#resolvedDevice = null
-    void service?.destroy()
-  }
 }
 
 export async function read(image: OCRImageInput, options?: OCROptions): Promise<OCRResult> {
@@ -178,8 +217,24 @@ export async function read(image: OCRImageInput, options?: OCROptions): Promise<
   try {
     return await ocr.read(image)
   } finally {
-    ocr.dispose()
+    await ocr.dispose()
   }
+}
+
+/**
+ * onnxruntime-web's WebGPU backend keeps a single global OrtRun slot.
+ * A second run throws "Session already started", and its `finally` clears
+ * that slot, so the first run then throws "Session mismatch".
+ */
+let ortTurn: Promise<void> = Promise.resolve()
+
+function takeTurn<T>(fn: () => Promise<T>): Promise<T> {
+  const run = ortTurn.then(fn, fn)
+  ortTurn = run.then(
+    () => undefined,
+    () => undefined,
+  )
+  return run
 }
 
 export type { ProgressInfo, Device }
@@ -269,7 +324,7 @@ async function fetchCached(
     if (done) break
     chunks.push(value)
     received += value.byteLength
-    onProgress?.({ status: 'progress', progress: (received / total) * 100, file })
+    onProgress?.({ status: 'progress', progress: (received / total) * 100, file, loaded: received, total })
   }
 
   const out = new Uint8Array(received)

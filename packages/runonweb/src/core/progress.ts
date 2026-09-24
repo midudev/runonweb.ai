@@ -2,6 +2,10 @@ export type ProgressInfo = {
   status: string
   progress?: number
   file?: string
+  /** Bytes received for this file, or for every file when `status` is `progress_total`. */
+  loaded?: number
+  /** Total bytes expected for the same scope as `loaded`. */
+  total?: number
 }
 
 export type ProgressCallback = (info: ProgressInfo) => void
@@ -16,5 +20,7 @@ export function toProgressInfo(data: Record<string, unknown>): ProgressInfo {
         ? (data.loaded / data.total) * 100
         : undefined
   const file = typeof data.file === 'string' ? data.file : undefined
-  return { status, progress, file }
+  const loaded = typeof data.loaded === 'number' ? data.loaded : undefined
+  const total = typeof data.total === 'number' ? data.total : undefined
+  return { status, progress, file, loaded, total }
 }

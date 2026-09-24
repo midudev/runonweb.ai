@@ -107,8 +107,8 @@ import { homeJsonLd } from '../lib/seo'
                 </th>
                 <td class="py-3.5 pr-6 font-sans text-[14px] text-fg-2">{m.task}</td>
                 <td class="pxl py-3.5 pr-6 text-[13px]">{m.weights.size}</td>
-                <td class="pxl py-3.5 pr-6 text-[13px]">{m.bench.webgpu ?? <span class="text-fg-3" aria-label="not available">—</span>}</td>
-                <td class="pxl py-3.5 text-[13px]">{m.bench.wasm ?? <span class="text-fg-3" aria-label="not available">—</span>}</td>
+                <td class="pxl py-3.5 pr-6 text-[13px]">{m.bench.webgpu ?? <span class="text-fg-3" aria-label="not available">-</span>}</td>
+                <td class="pxl py-3.5 text-[13px]">{m.bench.wasm ?? <span class="text-fg-3" aria-label="not available">-</span>}</td>
               </tr>
             ))
           }
@@ -137,7 +137,7 @@ import { homeJsonLd } from '../lib/seo'
       <ul class="grid grid-cols-4 gap-3" aria-label="Model icons">
         {models.map((m) => (
           <li>
-            <a href={`/models/${m.slug}`} class="card flex aspect-square items-center justify-center p-4 transition hover:bg-bg-3" title={m.name} aria-label={`${m.name} — ${m.task}`}>
+            <a href={`/models/${m.slug}`} class="card flex aspect-square items-center justify-center p-4 transition hover:bg-bg-3" title={m.name} aria-label={`${m.name}: ${m.task}`}>
               <PixelIcon rows={m.icon} hue={m.hue} class="h-full w-full" />
             </a>
           </li>

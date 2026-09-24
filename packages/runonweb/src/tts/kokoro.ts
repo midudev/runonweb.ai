@@ -7,7 +7,7 @@ import { kokoroPhonemeLang } from './voices.ts'
 import type { SpeakChunk } from './types.ts'
 
 /**
- * Kokoro 82M (StyleTTS 2) on Transformers.js directly — no `kokoro-js`, so the app ships one
+ * Kokoro 82M (StyleTTS 2) on Transformers.js directly. No `kokoro-js`, so the app ships one
  * copy of Transformers.js. Voice style vectors come from the same Hugging Face repo.
  */
 const DEFAULT_MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX'

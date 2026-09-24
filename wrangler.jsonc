@@ -2,6 +2,9 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "runonweb",
   "compatibility_date": "2026-09-11",
+  "routes": [
+    { "pattern": "runonweb.ai", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist",
     "html_handling": "drop-trailing-slash",

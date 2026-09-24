@@ -110,7 +110,13 @@ async function fetchFile(url: string, file: string, onProgress?: ProgressCallbac
   if (!res.ok) throw new Error(`Could not download ${file} (HTTP ${res.status}) from ${url}`)
 
   const buffer = await readWithProgress(res, (loaded, total) => {
-    onProgress?.({ status: 'progress', file, progress: total > 0 ? (loaded / total) * 100 : undefined })
+    onProgress?.({
+      status: 'progress',
+      file,
+      progress: total > 0 ? (loaded / total) * 100 : undefined,
+      loaded,
+      total: total > 0 ? total : undefined,
+    })
   })
 
   if (cache) {

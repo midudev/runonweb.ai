@@ -2,7 +2,7 @@
 export const SITE = {
   name: 'runonweb',
   url: 'https://runonweb.ai',
-  title: 'runonweb — Free AI models that run in the browser',
+  title: 'runonweb: Free AI models that run in the browser',
   description:
     'Free, open-source AI modules that run in the browser: speech-to-text, transcript cleanup, background removal, captioning, depth, object detection, OCR, embeddings, translation, TTS and image generation. WebGPU or WASM, nothing leaves the device.',
   locale: 'en_US',

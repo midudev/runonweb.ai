@@ -37,6 +37,12 @@ let chunks: STTChunk[] = []
 let lastPartial = ''
 let highlightRaf = 0
 let wordEls: HTMLElement[] = []
+let revealShown = ''
+let revealTarget = ''
+let revealRaf = 0
+let pendingWords: { next: STTChunk[]; fallback: string } | null = null
+let revealLive = false
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 function setBusy(busy: boolean) {
   if (transcribeBtn) transcribeBtn.disabled = busy || !selectedFile
@@ -63,25 +69,14 @@ function setCaret(on: boolean) {
   if (caretEl) caretEl.hidden = !on
 }
 
-function audioDuration() {
-  const dur = audioEl && Number.isFinite(audioEl.duration) ? audioEl.duration : 0
-  return dur > 0 ? dur : (wave?.duration ?? 0)
-}
-
 function fitChunks(next: STTChunk[]): STTChunk[] {
-  const duration = audioDuration()
-  if (!next.length) return next
-  const cleaned = next.map((c) => ({
-    text: c.text.trim(),
-    start: c.start,
-    end: Math.max(c.end, c.start),
-  }))
-  const maxEnd = Math.max(...cleaned.map((c) => c.end))
-  if (duration > 0 && maxEnd > 0 && (maxEnd > duration * 1.12 || maxEnd < duration * 0.65)) {
-    const scale = duration / maxEnd
-    return cleaned.map((c) => ({ ...c, start: c.start * scale, end: c.end * scale }))
-  }
-  return cleaned
+  return next
+    .map((c) => ({
+      text: c.text.trim(),
+      start: c.start,
+      end: Math.max(c.end, c.start),
+    }))
+    .filter((c) => c.text)
 }
 
 function setPlain(text: string, streaming: boolean) {
@@ -92,6 +87,77 @@ function setPlain(text: string, streaming: boolean) {
     textEl.textContent = text
   }
   setCaret(streaming)
+}
+
+function stopReveal() {
+  if (revealRaf) cancelAnimationFrame(revealRaf)
+  revealRaf = 0
+  pendingWords = null
+  revealLive = false
+}
+
+function resetReveal() {
+  stopReveal()
+  revealShown = ''
+  revealTarget = ''
+}
+
+/** Shared prefix, so a revised partial does not yank the caret backwards. */
+function sharedPrefix(a: string, b: string) {
+  const n = Math.min(a.length, b.length)
+  let i = 0
+  while (i < n && a[i] === b[i]) i++
+  return i
+}
+
+function paintReveal() {
+  if (textEl) textEl.textContent = revealShown
+  setCaret(revealLive)
+}
+
+function commitTranscript(next: STTChunk[], fallback: string) {
+  revealLive = false
+  if (next.length) setWords(next, fallback)
+  else setPlain(fallback, false)
+  if (audioEl && !audioEl.paused && chunks.length) loopHighlight()
+}
+
+function finishReveal() {
+  revealRaf = 0
+  const pending = pendingWords
+  if (!pending) return
+  pendingWords = null
+  commitTranscript(pending.next, pending.fallback)
+}
+
+function tickReveal() {
+  const behind = revealTarget.length - revealShown.length
+  if (behind > 0) {
+    // One character when close, two when a burst is waiting. Never a whole token.
+    const step = behind > 18 ? 2 : 1
+    const end = revealShown.length + step
+    revealShown = revealTarget.slice(0, end)
+    paintReveal()
+  }
+  if (revealShown.length < revealTarget.length) {
+    revealRaf = requestAnimationFrame(tickReveal)
+    return
+  }
+  finishReveal()
+}
+
+function revealTo(text: string) {
+  if (reduceMotion) {
+    revealShown = text
+    revealTarget = text
+    setPlain(text, true)
+    return
+  }
+  if (!text.startsWith(revealShown)) {
+    revealShown = text.slice(0, sharedPrefix(revealShown, text))
+  }
+  revealTarget = text
+  if (!revealRaf) revealRaf = requestAnimationFrame(tickReveal)
 }
 
 function setWords(next: STTChunk[], fallback = '') {
@@ -109,6 +175,8 @@ function setWords(next: STTChunk[], fallback = '') {
     const span = document.createElement('span')
     span.className = 'stt-word'
     span.dataset.i = String(i)
+    span.dataset.start = chunk.start.toFixed(2)
+    span.dataset.end = chunk.end.toFixed(2)
     span.textContent = chunk.text
     textEl.appendChild(span)
     return span
@@ -118,12 +186,14 @@ function setWords(next: STTChunk[], fallback = '') {
 }
 
 function wordAt(time: number) {
-  if (!chunks.length) return -1
-  if (time < chunks[0]!.start) return 0
-  for (let i = chunks.length - 1; i >= 0; i--) {
-    if (time >= chunks[i]!.start) return i
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i]!
+    const nextStart = chunks[i + 1]?.start
+    let end = nextStart === undefined ? chunk.end : Math.min(chunk.end, nextStart)
+    if (end <= chunk.start) end = nextStart ?? chunk.start + 0.08
+    if (time >= chunk.start && time < end) return i
   }
-  return 0
+  return -1
 }
 
 function highlight(time: number) {
@@ -170,28 +240,44 @@ async function runTranscribe() {
   }
   const audio = selectedFile
   lastPartial = ''
+  resetReveal()
+  revealLive = true
   setPlain('', true)
 
   await ui.run(
     async () => {
+      try {
       const model = await ensureModel()
       ui.setStatus('Transcribing…')
       const t0 = performance.now()
       const result = await model.transcribe(audio, {
         language: selectedLanguage,
+        timestamps: 'word',
         onPartial: (text) => {
           lastPartial = text
-          if (!chunks.length) setPlain(text, true)
+          if (!chunks.length) revealTo(text)
         },
       })
       if (timingEl) timingEl.textContent = formatMs(performance.now() - t0)
       const text = result.text || lastPartial
-      if (result.chunks.length) setWords(result.chunks, text)
-      else if (text) setPlain(text, false)
-      else setPlain('(empty transcript)', false)
+      const next = text || '(empty transcript)'
+      if (reduceMotion || revealShown === next) {
+        resetReveal()
+        commitTranscript(result.chunks, next)
+      } else {
+        pendingWords = { next: result.chunks, fallback: next }
+        revealTo(next)
+      }
       ui.setStatus('Done')
       ui.setProgress(null)
-      if (audioEl && !audioEl.paused && chunks.length) loopHighlight()
+    } finally {
+      if (revealLive && !pendingWords) {
+        if (revealRaf) cancelAnimationFrame(revealRaf)
+        revealRaf = 0
+        revealLive = false
+        setCaret(false)
+      }
+    }
     },
     { busy: setBusy }
   )
@@ -306,6 +392,7 @@ bindSamples(ui, {
 })
 return () => {
   urls.revokeAll()
+  stopReveal()
   if (highlightRaf) cancelAnimationFrame(highlightRaf)
   stopLive()
   if (recording) mediaRecorder?.stop()

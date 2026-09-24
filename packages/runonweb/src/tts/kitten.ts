@@ -175,7 +175,7 @@ async function fetchCached(url: string, file: string, onProgress?: ProgressCallb
     if (done) break
     chunks.push(value)
     received += value.byteLength
-    onProgress?.({ status: 'progress', progress: (received / total) * 100, file })
+    onProgress?.({ status: 'progress', progress: (received / total) * 100, file, loaded: received, total })
   }
 
   const out = new Uint8Array(received)

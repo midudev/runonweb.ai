@@ -16,7 +16,7 @@ const seo = modelSeo(model)
 <Layout {...seo}>
   <ModelShell model={model}>
     <div slot="demo" class="space-y-5">
-      <DemoStatus prefix="rbg" idle="Pick a sample or drop an image — it runs right away" />
+      <DemoStatus prefix="rbg" idle="Pick a sample or drop an image. It runs right away" />
       <Samples prefix="rbg" samples={model.samples} />
       <ImageDropzone prefix="rbg" />
       <div class="flex flex-wrap gap-2">
@@ -24,12 +24,17 @@ const seo = modelSeo(model)
         <Button as="a" attr="data-rbg-download" hidden download="runonweb-remover.png">Download PNG</Button>
       </div>
       <div data-rbg-preview hidden>
-        <compare-slider data-rbg-compare data-single class="w-full" style="--compare-bg: #0a0a0b">
-          <img data-rbg-before alt="Original" />
-          <div data-layer="after" class="checker">
-            <img data-rbg-after alt="Background removed" class="size-full object-contain" />
+        <div data-rbg-stage class="relative mx-auto max-w-full">
+          <compare-slider data-rbg-compare data-single class="absolute inset-0 block" style="--compare-bg: #0a0a0b">
+            <img data-rbg-before alt="Original" />
+            <div data-layer="after" class="checker">
+              <img data-rbg-after alt="Background removed" class="size-full object-contain" />
+            </div>
+          </compare-slider>
+          <div data-rbg-fx class="rbg-fx" aria-hidden="true">
+            <div class="rbg-band"></div>
           </div>
-        </compare-slider>
+        </div>
       </div>
       <style>
         .checker {
@@ -41,6 +46,58 @@ const seo = modelSeo(model)
             linear-gradient(-45deg, transparent 75%, #3a3a40 75%);
           background-size: 16px 16px;
           background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+        }
+
+        /* Sweep while the model is erasing the background. */
+        .rbg-fx {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 180ms linear;
+        }
+        [data-scanning] .rbg-fx {
+          opacity: 1;
+          visibility: visible;
+        }
+        .rbg-band {
+          position: absolute;
+          left: 0;
+          right: 0;
+          height: 28%;
+          top: -28%;
+          background-image:
+            linear-gradient(var(--hue, var(--color-accent)) 2px, transparent 2px),
+            linear-gradient(90deg, var(--hue, var(--color-accent)) 2px, transparent 2px);
+          background-size: 8px 8px;
+          background-position: 0 0, 0 0;
+          opacity: 0.85;
+          mix-blend-mode: screen;
+          mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 72%, transparent);
+          animation: rbg-scan 1.6s linear infinite;
+        }
+        .rbg-band::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 22%;
+          height: 2px;
+          background: var(--hue, var(--color-accent));
+          box-shadow: 0 0 16px var(--hue, var(--color-accent));
+        }
+        @keyframes rbg-scan {
+          to {
+            top: 100%;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .rbg-band {
+            animation: none;
+            top: 36%;
+          }
         }
       </style>
     </div>

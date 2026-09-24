@@ -1,0 +1,35 @@
+[
+  {
+    "state": "Shoes arrived two weeks late and in the wrong size. Also I see two charges on my card.",
+    "questions": {
+      "department": {"type": "choice", "instructions": "Which team should handle this?",
+        "criteria": {"returns": "Exchanges, refunds, wrong or damaged items", "shipping": "Delivery status, delays, lost packages", "billing": "Charges, invoices, payment problems"}},
+      "escalate": {"type": "noul", "instructions": "Does this need urgent human attention?"},
+      "frustration": {"type": "score", "instructions": "How frustrated is the customer?", "criteria": ["Calm", "Frustrated", "Very angry"]}
+    }
+  },
+  {
+    "state": "I was charged twice. Please fix this ASAP.",
+    "questions": {
+      "billing": {"type": "noul", "instructions": "Is this ticket about billing?"},
+      "tone": {"type": "choice", "instructions": "What is the customer's tone?", "criteria": {"calm": null, "frustrated": null, "angry": null}},
+      "urgency": {"type": "score", "instructions": "How urgent is this ticket?", "criteria": ["can wait", "this week", "today"]}
+    }
+  },
+  {
+    "state": {"subject": "No puedo entrar", "body": "Hola, desde ayer no puedo iniciar sesión en la app. Me dice contraseña incorrecta pero la acabo de cambiar. ¿Me ayudáis?"},
+    "questions": {
+      "team": {"type": "choice", "instructions": "¿Qué equipo debe atender este ticket?", "criteria": {"billing": "Pagos y reembolsos", "shipping": "Problemas de envío", "access": "Acceso a la cuenta e inicio de sesión"}},
+      "spam": {"type": "noul", "instructions": "Is this message spam?"},
+      "sentiment": {"type": "choice", "instructions": "Sentiment of the message", "criteria": {"positive": null, "neutral": null, "negative": null}}
+    }
+  },
+  {
+    "state": "The new update is amazing! Battery life doubled and the camera is way sharper. Best phone I've owned.",
+    "questions": {
+      "sentiment": {"type": "choice", "instructions": "What is the sentiment of this review?", "criteria": {"positive": null, "neutral": null, "negative": null}},
+      "stars": {"type": "score", "instructions": "How many stars would this reviewer give?", "criteria": ["1 star", "2 stars", "3 stars", "4 stars", "5 stars"]},
+      "mentions_price": {"type": "noul", "instructions": "Does the review mention the price?"}
+    }
+  }
+]

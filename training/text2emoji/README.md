@@ -1,4 +1,4 @@
-# text2emoji — training recipe
+# text2emoji: training recipe
 
 Trains the tiny text → emoji model behind `runonweb/emoji` from scratch and exports it to ONNX
 in the Transformers.js layout. Whole pipeline runs on a laptop (Apple M-series, MPS) in ~15 min.
@@ -10,7 +10,7 @@ in the Transformers.js layout. Whole pipeline runs on a laptop (Apple M-series, 
 
 Data: [KomeijiForce/Text2Emoji](https://huggingface.co/datasets/KomeijiForce/Text2Emoji) (EmojiLM paper),
 503k ChatGPT-generated English sentence → emoji pairs. ~493k remain after cleaning (dedupe, cap at 12
-emojis, drop non-emoji graphemes); 5k held out. The dataset card lists no license — check before
+emojis, drop non-emoji graphemes); 5k held out. The dataset card lists no license. Check before
 redistributing the *data*; the trained weights are MIT.
 
 Emoji-set F1 is against a single ChatGPT reference, so it under-counts valid alternatives; look at the

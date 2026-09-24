@@ -70,7 +70,7 @@ async function runClean() {
       })
       if (timingEl) timingEl.textContent = formatMs(performance.now() - t0)
       if (resultEl) {
-        resultEl.textContent = result.text || '(empty — the input was only filler or noise)'
+        resultEl.textContent = result.text || '(empty: the input was only filler or noise)'
       }
       ui.setStatus('Done')
       ui.setProgress(null)

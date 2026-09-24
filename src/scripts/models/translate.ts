@@ -68,7 +68,7 @@ bindSamples(ui, {
 })
 pairEl?.addEventListener('change', () => {
   const { from, to } = currentPair()
-  ui.setStatus(`Pair ${from} → ${to} — translate to load it`)
+  ui.setStatus(`Pair ${from} → ${to}. Translate to load it`)
 })
 
 return () => {

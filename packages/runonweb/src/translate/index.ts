@@ -12,7 +12,7 @@ export type { Architecture, PairEntry, Route }
  * 17–44 MB per pair, int8. Pairs without a direct model pivot through English.
  *
  * Pass `model` (a Hugging Face id such as `Xenova/m2m100_418M`) to use a Transformers.js
- * translation pipeline instead — one model for 100 languages, at ~630 MB.
+ * translation pipeline instead: one model for 100 languages, at ~630 MB.
  */
 export const MULTILINGUAL_MODEL = 'Xenova/m2m100_418M'
 

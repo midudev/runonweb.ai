@@ -10,3 +10,8 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - astro@7.1.1
+
+overrides:
+  # onnxruntime-web 1.30.0+ breaks BEN2's mixed fp16/fp32 LayerNorm on WebGPU
+  # (onnxruntime#32627, fixed in #32629 but unreleased). Drop once a release has the fix.
+  '@huggingface/transformers>onnxruntime-web': 1.29.0

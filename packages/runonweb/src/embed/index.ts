@@ -64,7 +64,7 @@ export class TextEmbedder {
         model: this.#model,
         device: this.#device,
         // fp16 on WebGPU (~45 MB); q8 on WASM (~23 MB).
-        // q8 on WebGPU produces garbage similarities — never use it there.
+        // q8 on WebGPU produces garbage similarities. Never use it there.
         dtype: (d) => (d === 'webgpu' ? 'fp16' : 'q8'),
         onProgress: this.#onProgress,
       })

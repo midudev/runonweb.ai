@@ -85,6 +85,8 @@ function mapLoadProgress(onProgress?: ProgressCallback): (status: Record<string,
       status: component ? `loading ${component}` : 'loading',
       progress: progress * 100,
       file: component,
+      loaded: loaded > 0 ? loaded : undefined,
+      total: total > 0 ? total : undefined,
     })
   }
 }

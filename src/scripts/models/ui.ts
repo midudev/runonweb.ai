@@ -1,4 +1,4 @@
-import { isWebGPUAvailable } from 'runonweb/core'
+import { formatBytes, isWebGPUAvailable } from 'runonweb/core'
 import type { ProgressInfo } from 'runonweb/core'
 import { onPage } from '../lifecycle'
 
@@ -18,6 +18,57 @@ export type DemoUI = {
   initDeviceBadge(): void
   /** Wrap an async action: clears error, reports failure, restores state. */
   run<T>(action: () => Promise<T>, opts?: { busy?: (b: boolean) => void }): Promise<T | undefined>
+}
+
+type SpeedState = {
+  files: Map<string, number>
+  useTotal: boolean
+  lastBytes: number
+  lastTime: number
+  speed: number
+}
+
+function resetSpeed(state: SpeedState) {
+  state.files.clear()
+  state.useTotal = false
+  state.lastBytes = 0
+  state.lastTime = 0
+  state.speed = 0
+}
+
+/** Smoothed bytes/sec from progress events. `progress_total` is the aggregate and wins over per-file counts. */
+function noteDownloadSpeed(state: SpeedState, info: ProgressInfo, now: number): number | null {
+  if (typeof info.loaded !== 'number' || !Number.isFinite(info.loaded)) return state.speed || null
+  let bytes: number | null = null
+  if (info.status === 'progress_total') {
+    state.useTotal = true
+    bytes = info.loaded
+  } else if (!state.useTotal && info.file) {
+    state.files.set(info.file, info.loaded)
+    bytes = 0
+    for (const n of state.files.values()) bytes += n
+  } else if (!state.useTotal) {
+    bytes = info.loaded
+  }
+  if (bytes == null) return state.speed || null
+  if (state.lastTime === 0) {
+    state.lastTime = now
+    state.lastBytes = bytes
+    return null
+  }
+  const dt = (now - state.lastTime) / 1000
+  if (dt < 0.25) return state.speed || null
+  const delta = bytes - state.lastBytes
+  if (delta <= 0) {
+    state.lastBytes = bytes
+    state.lastTime = now
+    return state.speed || null
+  }
+  const instant = delta / dt
+  state.speed = state.speed === 0 ? instant : state.speed * 0.65 + instant * 0.35
+  state.lastBytes = bytes
+  state.lastTime = now
+  return state.speed
 }
 
 /** Overlay the logo loader on a keycap button. */
@@ -40,9 +91,29 @@ export function createDemoUI(prefix: string): DemoUI {
     document.querySelector<T>(`[data-${prefix}-${name}]`)
 
   const statusEl = el('status')
+  const progressRow = el('progress-row')
   const progressEl = el<HTMLProgressElement>('progress')
+  const speedEl = el('speed')
   const deviceEl = el('device')
   const errorEl = el('error')
+  const speedState: SpeedState = {
+    files: new Map(),
+    useTotal: false,
+    lastBytes: 0,
+    lastTime: 0,
+    speed: 0,
+  }
+
+  const setSpeed = (bytesPerSec: number | null) => {
+    if (!speedEl) return
+    if (bytesPerSec == null || bytesPerSec < 1) {
+      speedEl.hidden = true
+      speedEl.textContent = ''
+      return
+    }
+    speedEl.hidden = false
+    speedEl.textContent = `${formatBytes(bytesPerSec)}/s`
+  }
 
   const ui: DemoUI = {
     el,
@@ -55,11 +126,15 @@ export function createDemoUI(prefix: string): DemoUI {
       errorEl.hidden = !message
     },
     setProgress(value) {
-      if (!progressEl) return
       if (value == null) {
-        progressEl.hidden = true
+        if (progressRow) progressRow.hidden = true
+        if (progressEl) progressEl.hidden = true
+        setSpeed(null)
+        resetSpeed(speedState)
         return
       }
+      if (progressRow) progressRow.hidden = false
+      if (!progressEl) return
       progressEl.hidden = false
       progressEl.value = Math.max(0, Math.min(100, value))
     },
@@ -67,17 +142,27 @@ export function createDemoUI(prefix: string): DemoUI {
       if (deviceEl) deviceEl.textContent = text
     },
     onProgress(info) {
+      if (info.status === 'loading' && (info.progress ?? 0) === 0 && info.loaded == null) {
+        resetSpeed(speedState)
+        setSpeed(null)
+      }
+      const bytesPerSec = noteDownloadSpeed(speedState, info, performance.now())
       if (typeof info.progress === 'number') {
         ui.setProgress(info.progress)
         ui.setStatus(`${info.status}${info.file ? `: ${info.file}` : ''} (${Math.round(info.progress)}%)`)
+        setSpeed(bytesPerSec)
+        if (progressEl && bytesPerSec != null && bytesPerSec >= 1) {
+          progressEl.setAttribute('aria-valuetext', `${Math.round(info.progress)}%, ${formatBytes(bytesPerSec)}/s`)
+        }
       } else {
         ui.setStatus(info.status)
+        if (bytesPerSec != null) setSpeed(bytesPerSec)
       }
     },
     initDeviceBadge() {
       void isWebGPUAvailable().then((ok) => {
         if (deviceEl && !deviceEl.textContent) {
-          deviceEl.textContent = ok ? 'WebGPU available' : 'WebGPU unavailable — will use WASM'
+          deviceEl.textContent = ok ? 'WebGPU available' : 'WebGPU unavailable. Will use WASM'
         }
       })
     },
@@ -174,7 +259,7 @@ export function bindSamples(
   handlers: {
     onFile?: (file: File) => void
     onText?: (sample: Extract<SampleSpec, { kind: 'text' }>) => void
-    /** Fires synchronously on click, before any fetch — use it to start audio playback. */
+    /** Fires synchronously on click, before any fetch. Use it to start audio playback. */
     onSelect?: (spec: SampleSpec, btn: HTMLButtonElement) => void
   }
 ) {

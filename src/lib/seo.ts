@@ -32,7 +32,7 @@ export function modelFaq(model: Model): Array<{ q: string; a: string }> {
 
 const stripTicks = (s: string) => s.replace(/`/g, '')
 
-/** "Scribe: Speech-to-Text in the browser with Whisper tiny.en" — task and base model are the search terms. */
+/** "Scribe: Speech-to-Text in the browser with Whisper tiny.en". Task and base model are the search terms. */
 export function modelTitle(model: Model): string {
   return `${model.name}: ${model.task} in the browser with ${model.weights.baseModel}`
 }
@@ -100,7 +100,7 @@ export function modelSeo(model: Model) {
     title: modelTitle(model),
     description: modelDescription(model),
     ogImage: `/og/model-${model.slug}.png`,
-    ogImageAlt: `${model.name} — ${model.task} in the browser, built on ${model.weights.baseModel}`,
+    ogImageAlt: `${model.name}: ${model.task} in the browser, built on ${model.weights.baseModel}`,
     jsonLd: modelJsonLd(model),
   }
 }
@@ -116,7 +116,7 @@ export function catalogJsonLd(): Array<Record<string, unknown>> {
       itemListElement: models.map((m, i) => ({
         '@type': 'ListItem',
         position: i + 1,
-        name: `${m.name} — ${m.task}`,
+        name: `${m.name}: ${m.task}`,
         url: absoluteUrl(`/models/${m.slug}`),
       })),
     },
@@ -162,7 +162,7 @@ export function docsJsonLd(): Array<Record<string, unknown>> {
       inLanguage: 'en',
       author: { '@id': `${SITE.url}/#organization` },
       publisher: { '@id': `${SITE.url}/#organization` },
-      about: models.map((m) => ({ '@type': 'Thing', name: `${m.name} — ${m.task}`, url: absoluteUrl(`/models/${m.slug}`) })),
+      about: models.map((m) => ({ '@type': 'Thing', name: `${m.name}: ${m.task}`, url: absoluteUrl(`/models/${m.slug}`) })),
       proficiencyLevel: 'Beginner',
     },
     {

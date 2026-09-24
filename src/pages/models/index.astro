@@ -11,7 +11,7 @@ const groups: ModelInput[] = ['audio', 'image', 'text']
   title="Browser AI models: speech, vision and text"
   description="Every runonweb module: speech, vision and text models that run in the browser on WebGPU or WASM. Live demos, copy-paste code, measured timings, base model and license for each one."
   ogImage="/og/models.png"
-  ogImageAlt="runonweb models — speech, vision and text AI that runs in the browser"
+  ogImageAlt="runonweb models: speech, vision and text AI that runs in the browser"
   jsonLd={catalogJsonLd()}
 >
   <header class="container-x pt-10 sm:pt-16">
@@ -54,7 +54,7 @@ const groups: ModelInput[] = ['audio', 'image', 'text']
                 </span>
                 <span class="hidden sm:block">
                   <span class="readout block text-fg-3">Fastest</span>
-                  <span class="pxl mt-1 block text-[13px]">{m.bench.webgpu ?? m.bench.wasm ?? '—'}</span>
+                  <span class="pxl mt-1 block text-[13px]">{m.bench.webgpu ?? m.bench.wasm ?? '-'}</span>
                 </span>
                 <div class="hidden h-9 w-[3.375rem] sm:block" data-vt="icon" transition:name={`model-icon-${m.slug}`} transition:animate="none">
                   <PixelIcon rows={m.icon} hue={m.hue} class="h-full w-full" />

@@ -1,0 +1,92 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('classify')
+if (!model) throw new Error('Model classify not found')
+const seo = modelSeo(model)
+
+const first = model.samples[0]
+const firstText = first?.kind === 'text' ? first.text : ''
+const firstQuestions =
+  first?.kind === 'text' && first.extra ? JSON.stringify(JSON.parse(first.extra).questions, null, 2) : '{}'
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="cls" idle="Pick a sample, or write a text and your own questions" />
+      <Samples prefix="cls" samples={model.samples} />
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div class="space-y-4">
+          <label class="block">
+            <span class="readout mb-2 block text-fg-3">State · the text to evaluate</span>
+            <textarea data-cls-state rows="4" class="field">{firstText}</textarea>
+          </label>
+          <label class="block">
+            <span class="readout mb-2 block text-fg-3">Questions · noul | choice | score</span>
+            <textarea
+              data-cls-questions
+              rows="16"
+              spellcheck="false"
+              class="field font-mono text-[12px] leading-relaxed">{firstQuestions}</textarea>
+          </label>
+          <div class="flex flex-wrap items-center gap-3">
+            <Button attr="data-cls-run" variant="primary">Classify</Button>
+            <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+              <input data-cls-dates type="checkbox" class="accent-[var(--color-accent)]" />
+              dateFacts
+            </label>
+            <span class="font-mono text-[12px] text-fg-3">~750 MB, cached after the first load</span>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <span class="readout block text-fg-3">Answers</span>
+          <div data-cls-result class="space-y-3">
+            <p class="field text-fg-2">Probabilities for every option will appear here…</p>
+          </div>
+          <details class="border border-line bg-bg">
+            <summary class="cursor-pointer px-4 py-2.5 font-mono text-[12px] text-fg-2">Response JSON</summary>
+            <pre data-cls-json class="max-h-96 overflow-auto border-t border-line px-4 py-3 font-mono text-[12px] leading-relaxed text-fg-2">{'{}'}</pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<style>
+  :global(.cls-bar) {
+    transition: width 480ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  :global(.cls-sweep) {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 42%;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    animation: cls-sweep 1s ease-in-out infinite;
+  }
+  :global(.cls-wait) {
+    animation: flicker 900ms steps(2) infinite;
+  }
+  @keyframes cls-sweep {
+    from { transform: translateX(-120%); }
+    to { transform: translateX(260%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.cls-bar) { transition: none; }
+    :global(.cls-sweep) { animation: none; opacity: 0.7; width: 100%; }
+    :global(.cls-wait) { animation: none; }
+  }
+</style>
+
+<script>
+  import '../../scripts/models/classify.ts'
+</script>

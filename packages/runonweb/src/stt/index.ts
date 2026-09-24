@@ -33,9 +33,17 @@ export type TranscribeOptions = {
   language?: string
   /**
    * Whisper task. Default `transcribe` keeps the source language.
-   * `translate` turns speech into English — never the default here.
+   * `translate` turns speech into English. Never the default here.
    */
   task?: 'transcribe' | 'translate'
+  /**
+   * Ask Whisper for timestamps. `"segment"` returns each phrase with the model's
+   * start and end, in seconds. `"word"` (or `true`) splits those phrases into
+   * words and keeps them inside the phrase span. This ONNX build has no
+   * cross-attentions, so it cannot time each word on its own. Omit it and
+   * `chunks` is empty.
+   */
+  timestamps?: boolean | 'word' | 'segment'
 }
 
 export type STTAudioInput = Blob | File | string | Float32Array
@@ -117,8 +125,8 @@ export class SpeechToText {
     this.#onProgress?.({ status: 'transcribing' })
 
     const input = await prepareAudio(audio)
-    const duration = input instanceof Float32Array ? input.length / SAMPLE_RATE : 0
     const onPartial = options?.onPartial
+    const timestampMode = resolveTimestamps(options?.timestamps)
     let streamed = ''
 
     const base: Record<string, unknown> = {
@@ -127,15 +135,14 @@ export class SpeechToText {
       // Always transcribe unless asked otherwise. Multilingual Whisper will
       // otherwise slip into "translate to English" when language is unknown.
       task: options?.task ?? 'transcribe',
-      // Word-timestamp mode disables timestamp tokens. Without this, decode
-      // throws "Whisper did not predict an ending timestamp" and the retry
-      // can come back empty after the streamer already showed text.
+      // Without this, a clip that ends mid-word throws and the retry can come
+      // back empty after the streamer already showed text.
       force_full_sequences: false,
     }
     const language = options?.language ?? this.#language
     if (language) base.language = language
 
-    const run = async (returnTimestamps: true | 'word', stream: boolean) => {
+    const run = async (stream: boolean) => {
       const streamer =
         stream && onPartial ? await createStreamer(this.#pipe!, (text) => {
           streamed = text
@@ -143,24 +150,26 @@ export class SpeechToText {
         }) : undefined
       return this.#pipe!(input, {
         ...base,
-        return_timestamps: returnTimestamps,
+        return_timestamps: timestampMode ? true : false,
         ...(streamer ? { streamer } : {}),
       })
     }
 
     let raw: RawResult | RawResult[]
     try {
-      // Segment timestamps + streamer is the reliable path. Word timestamps
-      // need a different generate() return shape and often fail once a streamer
-      // is attached, wiping the final text after a good partial stream.
-      raw = await run(true, true)
+      raw = await run(true)
     } catch {
-      raw = await run(true, false)
+      raw = await run(false)
     }
 
     const parsed = normalizeRaw(raw)
     const text = parsed.text || streamed
-    const chunks = explodeWords(parsed.chunks.length ? parsed.chunks : wordsFromText(text, duration), duration)
+    const chunks =
+      timestampMode === 'word'
+        ? wordsInsideSegments(parsed.chunks)
+        : timestampMode === 'segment'
+          ? parsed.chunks
+          : []
 
     this.#onProgress?.({ status: 'done' })
     return { text, chunks }
@@ -188,6 +197,38 @@ export async function transcribe(
   } finally {
     stt.dispose()
   }
+}
+
+function resolveTimestamps(option: TranscribeOptions['timestamps']): 'word' | 'segment' | false {
+  if (option === true || option === 'word') return 'word'
+  if (option === 'segment') return 'segment'
+  return false
+}
+
+/** Place words inside the phrase span Whisper actually predicted. */
+function wordsInsideSegments(segments: STTChunk[]): STTChunk[] {
+  const words: STTChunk[] = []
+  for (const segment of segments) {
+    const parts = segment.text.trim().split(/\s+/).filter(Boolean)
+    if (!parts.length) continue
+    const start = segment.start
+    const end = Math.max(segment.end, start)
+    if (parts.length === 1) {
+      words.push({ text: parts[0]!, start, end })
+      continue
+    }
+    const weights = parts.map((part) => Math.max(1, part.length))
+    const total = weights.reduce((sum, weight) => sum + weight, 0)
+    const span = end - start
+    let cursor = start
+    parts.forEach((text, i) => {
+      const dur = span * (weights[i]! / total)
+      const next = i === parts.length - 1 ? end : cursor + dur
+      words.push({ text, start: cursor, end: next })
+      cursor = next
+    })
+  }
+  return words
 }
 
 async function createStreamer(pipe: ASRPipeline, onPartial: (text: string) => void) {
@@ -218,57 +259,11 @@ function parseChunks(raw?: RawChunk[]): STTChunk[] {
   if (!raw?.length) return []
   const chunks: STTChunk[] = []
   for (const item of raw) {
-    const text = (item.text ?? '').replace(/\s+/g, ' ')
-    if (!text.trim()) continue
+    const text = (item.text ?? '').replace(/\s+/g, ' ').trim()
+    if (!text) continue
     const start = item.timestamp?.[0] ?? chunks.at(-1)?.end ?? 0
     const end = item.timestamp?.[1] ?? start
     chunks.push({ text, start, end: end < start ? start : end })
-  }
-  return chunks
-}
-
-function wordsFromText(text: string, duration: number): STTChunk[] {
-  const parts = text.trim().split(/\s+/).filter(Boolean)
-  if (!parts.length) return []
-  const span = Math.max(0.04, (duration || parts.length * 0.35) / parts.length)
-  return parts.map((word, i) => ({
-    text: word,
-    start: i * span,
-    end: (i + 1) * span,
-  }))
-}
-
-/** Split segment chunks into words and align timestamps to the audio duration. */
-function explodeWords(raw: STTChunk[], duration: number): STTChunk[] {
-  const words: STTChunk[] = []
-  for (const chunk of raw) {
-    const parts = chunk.text.trim().split(/\s+/).filter(Boolean)
-    if (!parts.length) continue
-    if (parts.length === 1) {
-      words.push({ text: parts[0]!, start: chunk.start, end: Math.max(chunk.end, chunk.start) })
-      continue
-    }
-    const start = chunk.start
-    const end = Math.max(chunk.end, chunk.start)
-    const span = Math.max(0.04, (end - start || parts.length * 0.35) / parts.length)
-    parts.forEach((word, i) => {
-      words.push({
-        text: word,
-        start: start + i * span,
-        end: start + (i + 1) * span,
-      })
-    })
-  }
-  return alignToDuration(words, duration)
-}
-
-function alignToDuration(chunks: STTChunk[], duration: number): STTChunk[] {
-  if (!chunks.length) return chunks
-  const maxEnd = Math.max(...chunks.map((c) => Math.max(c.end, c.start)))
-  if (maxEnd <= 0.05 && duration > 0) return wordsFromText(chunks.map((c) => c.text).join(' '), duration)
-  if (duration > 0 && (maxEnd > duration * 1.2 || maxEnd < duration * 0.55)) {
-    const scale = duration / maxEnd
-    return chunks.map((c) => ({ ...c, start: c.start * scale, end: Math.max(c.end, c.start) * scale }))
   }
   return chunks
 }

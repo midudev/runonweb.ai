@@ -6,7 +6,7 @@ import { toProgressInfo } from '../core/progress.ts'
 /**
  * Default: LFM2.5-VL-450M (Liquid AI, Nov 2025). Multilingual vision-language model.
  *
- * License: LFM Open License v1.0 — free for individuals and for companies under
+ * License: LFM Open License v1.0. Free for individuals and for companies under
  * USD 10M annual revenue. Larger companies need a commercial license from Liquid AI.
  * https://huggingface.co/LiquidAI/LFM2.5-VL-450M/blob/main/LICENSE
  */

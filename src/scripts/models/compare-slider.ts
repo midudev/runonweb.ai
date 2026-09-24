@@ -197,7 +197,7 @@ if (!customElements.get('compare-slider')) {
  * its container, centered. The box then matches the picture exactly, so the checkerboard and the
  * clip line sit on the image and not on letterbox space.
  */
-export function fitCompareToImage(el: CompareSlider, img: HTMLImageElement, maxHeightRem = 34) {
+export function fitCompareToImage(el: HTMLElement, img: HTMLImageElement, maxHeightRem = 34) {
   const apply = () => {
     if (img.naturalWidth && img.naturalHeight) {
       const ratio = img.naturalWidth / img.naturalHeight
