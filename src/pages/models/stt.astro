@@ -1,0 +1,80 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import WaveformPlayer from '../../components/models/WaveformPlayer.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('stt')
+if (!model) throw new Error('Model stt not found')
+const seo = modelSeo(model)
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="stt" idle="Pick a language, then a clip, record, or upload" />
+      <div>
+        <p class="readout text-fg-3 mb-2">Language</p>
+        <div class="flex flex-wrap gap-2" data-stt-langs>
+          <Button variant="soft" size="sm" data-stt-lang="auto" aria-pressed="true">Auto</Button>
+          <Button variant="soft" size="sm" data-stt-lang="en" aria-pressed="false">English</Button>
+          <Button variant="soft" size="sm" data-stt-lang="es" aria-pressed="false">Español</Button>
+          <Button variant="soft" size="sm" data-stt-lang="ja" aria-pressed="false">日本語</Button>
+        </div>
+      </div>
+      <Samples prefix="stt" samples={model.samples} />
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-stt-record">Record</Button>
+        <Button as="label">
+          Upload audio
+          <input data-stt-file type="file" accept="audio/*" class="sr-only" />
+        </Button>
+        <Button attr="data-stt-transcribe" variant="primary" disabled>Transcribe</Button>
+      </div>
+      <WaveformPlayer prefix="stt" />
+      <div>
+        <p class="readout text-fg-3 mb-2">Transcript</p>
+        <div data-stt-result class="field min-h-28 whitespace-pre-wrap text-fg-2">
+          <span data-stt-text>Transcript will appear here…</span><span data-stt-caret class="stt-caret" hidden></span>
+        </div>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<style>
+  .stt-caret {
+    display: inline-block;
+    width: 0.55em;
+    height: 0.95em;
+    margin-left: 3px;
+    vertical-align: text-bottom;
+    background: var(--hue, var(--color-accent));
+    box-shadow: 0 0 8px var(--hue, var(--color-accent));
+    animation: flicker 800ms steps(2) infinite;
+  }
+  :global(.stt-word) {
+    transition: color 80ms linear, background-color 80ms linear;
+  }
+  :global(.stt-word + .stt-word) {
+    margin-left: 0.35em;
+  }
+  :global(.stt-word.is-now) {
+    color: var(--color-fg);
+    background: color-mix(in srgb, var(--hue, var(--color-accent)) 28%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stt-caret {
+      animation: none;
+      opacity: 0.7;
+    }
+  }
+</style>
+
+<script>
+  import '../../scripts/models/stt.ts'
+</script>

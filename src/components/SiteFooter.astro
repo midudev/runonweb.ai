@@ -1,0 +1,50 @@
+---
+import Logo from './Logo.astro'
+import { modelsByInput, INPUT_LABEL, type ModelInput } from '../data/models'
+
+const groups: ModelInput[] = ['audio', 'image', 'text']
+---
+
+<footer class="container-x mt-28 mb-10" transition:persist="site-footer">
+  <div class="rule"></div>
+  <div class="grid gap-10 pt-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <div>
+      <a href="/" class="inline-flex items-center gap-2.5 font-sans text-[15px] font-semibold tracking-tight">
+        <Logo />
+        <span>runonweb</span>
+      </a>
+      <p class="prose mt-4 max-w-sm text-[14px]">
+        Free, MIT-licensed AI modules for the browser. Every model is credited to its original authors. Nothing
+        leaves the device.
+      </p>
+      <nav aria-label="Footer">
+        <ul class="mt-6 flex flex-wrap gap-x-5 gap-y-2 font-sans text-[14px]">
+          <li><a href="/models" class="hover:underline underline-offset-4">Models</a></li>
+          <li><a href="/docs" class="hover:underline underline-offset-4">Docs</a></li>
+          <li><a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener" class="hover:underline underline-offset-4">Transformers.js</a></li>
+          <li><a href="https://onnxruntime.ai/docs/tutorials/web/" target="_blank" rel="noopener" class="hover:underline underline-offset-4">ONNX Runtime Web</a></li>
+        </ul>
+      </nav>
+    </div>
+    {
+      groups.map((input) => (
+        <nav aria-label={`${INPUT_LABEL[input]} models`}>
+          <h2 class="readout mb-4 text-fg-3">{INPUT_LABEL[input]} models</h2>
+          <ul class="space-y-2.5 font-sans text-[14px]">
+            {modelsByInput(input).map((m) => (
+              <li class="flex items-center gap-2" style={`--hue:${m.hue}`}>
+                <span class="led" />
+                <a href={`/models/${m.slug}`} class="hover:underline underline-offset-4">{m.name}</a>
+                <span class="readout text-fg-3">{m.task}</span>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+  </div>
+  <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+    <small class="readout text-fg-3">© {new Date().getFullYear()} runonweb.ai · v0.0.1 · MIT</small>
+    <span class="readout text-fg-3">Data sent to servers: 0 bytes</span>
+  </div>
+</footer>

@@ -1,0 +1,70 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import ImageDropzone from '../../components/models/ImageDropzone.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+import { OCR_SIZES, type OCRSize } from 'runonweb/ocr/sizes'
+
+const model = getModel('ocr')
+if (!model) throw new Error('Model ocr not found')
+const seo = modelSeo(model)
+
+const sizes = (['tiny', 'small', 'medium'] as OCRSize[]).map((id) => ({
+  id,
+  ...OCR_SIZES[id],
+}))
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="ocr" idle="Pick a size, then a sample or photo — it reads right away" />
+      <div>
+        <p class="readout text-fg-3 mb-2">Model size</p>
+        <div class="flex flex-wrap gap-2" data-ocr-sizes>
+          {
+            sizes.map((s) => (
+              <button
+                type="button"
+                data-ocr-size={s.id}
+                aria-pressed={s.id === 'small' ? 'true' : 'false'}
+                class="btn btn-soft h-auto flex-col items-start gap-1 px-3 py-2.5 text-left aria-pressed:bg-fg/15 aria-pressed:ring-1 aria-pressed:ring-line-2"
+              >
+                <span class="font-sans text-[13px] font-semibold">
+                  {s.label}
+                  <span class="readout ml-2 text-fg-3">{s.downloadMB}</span>
+                </span>
+                <span class="readout text-fg-3">
+                  {s.params} · rec {s.recAcc}
+                </span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <Samples prefix="ocr" samples={model.samples} />
+      <ImageDropzone prefix="ocr" />
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-ocr-run" variant="primary" disabled>Read text</Button>
+      </div>
+      <div data-ocr-preview hidden class="space-y-3">
+        <div class="relative inline-block max-w-full overflow-hidden bg-bg">
+          <img data-ocr-image alt="Selected" class="block max-h-[30rem] max-w-full" />
+          <svg data-ocr-overlay class="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true"></svg>
+        </div>
+        <div>
+          <p class="readout text-fg-3 mb-2">Text</p>
+          <div data-ocr-result class="field min-h-28 whitespace-pre-wrap text-fg-2">Text will appear here…</div>
+        </div>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/ocr.ts'
+</script>

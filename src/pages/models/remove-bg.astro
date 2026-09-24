@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import ImageDropzone from '../../components/models/ImageDropzone.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('remove-bg')
+if (!model) throw new Error('Model remove-bg not found')
+const seo = modelSeo(model)
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="rbg" idle="Pick a sample or drop an image — it runs right away" />
+      <Samples prefix="rbg" samples={model.samples} />
+      <ImageDropzone prefix="rbg" />
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-rbg-run" variant="primary" disabled>Remove background</Button>
+        <Button as="a" attr="data-rbg-download" hidden download="runonweb-remover.png">Download PNG</Button>
+      </div>
+      <div data-rbg-preview hidden>
+        <compare-slider data-rbg-compare data-single class="w-full" style="--compare-bg: #0a0a0b">
+          <img data-rbg-before alt="Original" />
+          <div data-layer="after" class="checker">
+            <img data-rbg-after alt="Background removed" class="size-full object-contain" />
+          </div>
+        </compare-slider>
+      </div>
+      <style>
+        .checker {
+          background-color: #2a2a2f;
+          background-image:
+            linear-gradient(45deg, #3a3a40 25%, transparent 25%),
+            linear-gradient(-45deg, #3a3a40 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #3a3a40 75%),
+            linear-gradient(-45deg, transparent 75%, #3a3a40 75%);
+          background-size: 16px 16px;
+          background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+        }
+      </style>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/remove-bg.ts'
+</script>

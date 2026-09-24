@@ -1,0 +1,62 @@
+---
+/**
+ * Keycap button. Renders <a> when `href` is given, <label> with `as="label"`, else <button>.
+ * Pixel label, chamfered corners, 4px physical edge that sinks on press, LED that lights on hover.
+ * Set `loading` or `aria-busy="true"` to overlay the logo as a loader.
+ */
+import type { HTMLAttributes } from 'astro/types'
+import Logo from '../Logo.astro'
+
+type Variant = 'primary' | 'outline' | 'soft'
+type Size = 'md' | 'sm'
+
+interface Props extends HTMLAttributes<'button'> {
+  href?: string
+  as?: 'button' | 'a' | 'label'
+  variant?: Variant
+  size?: Size
+  /** Hide the LED square. */
+  noLed?: boolean
+  /** Extra data-* attribute name for demo scripts (e.g. "data-rbg-run"). */
+  attr?: string
+  /** Anchor-only attributes passed through when `as="a"`. */
+  download?: string
+  hidden?: boolean
+  /** Overlay the animated logo and treat the control as busy. */
+  loading?: boolean
+}
+
+const {
+  href,
+  as,
+  variant = 'outline',
+  size = 'md',
+  noLed = false,
+  attr,
+  type = 'button',
+  class: className,
+  loading = false,
+  ...rest
+} = Astro.props
+
+const Tag = as ?? (href ? 'a' : 'button')
+const dataAttr: Record<string, string> = attr ? { [attr]: '' } : {}
+const classes = ['btn', `btn-${variant}`, size === 'sm' && 'btn-sm', noLed && 'btn-noled', className]
+const external = href?.startsWith('http')
+---
+
+<Tag
+  href={href}
+  type={Tag === 'button' ? type : undefined}
+  target={external ? '_blank' : undefined}
+  rel={external ? 'noopener' : undefined}
+  class:list={classes}
+  aria-busy={loading ? 'true' : undefined}
+  {...dataAttr}
+  {...rest}
+>
+  <span class="btn-label"><slot /></span>
+  <span class="btn-loader" aria-hidden="true">
+    <Logo class={size === 'sm' ? 'size-3.5' : 'size-4'} />
+  </span>
+</Tag>

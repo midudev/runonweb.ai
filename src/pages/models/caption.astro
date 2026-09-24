@@ -1,0 +1,63 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import ImageDropzone from '../../components/models/ImageDropzone.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+import { CAPTION_LANGUAGES } from 'runonweb/caption'
+
+const DETAILS = [
+  ['short', 'Short · alt text'],
+  ['detailed', 'Detailed'],
+  ['more', 'More detailed'],
+] as const
+
+const model = getModel('caption')
+if (!model) throw new Error('Model caption not found')
+const seo = modelSeo(model)
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="cap" idle="Pick a sample or drop an image — it runs right away" />
+      <Samples prefix="cap" samples={model.samples} />
+      <ImageDropzone prefix="cap" />
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          Language
+          <select data-cap-lang class="field w-auto py-2">
+            {
+              Object.entries(CAPTION_LANGUAGES).map(([code, name]) => (
+                <option value={code} selected={code === 'en'}>
+                  {name}
+                </option>
+              ))
+            }
+          </select>
+        </label>
+        <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          Detail
+          <select data-cap-detail class="field w-auto py-2">
+            {DETAILS.map(([value, label]) => <option value={value}>{label}</option>)}
+          </select>
+        </label>
+        <Button attr="data-cap-run" variant="primary" disabled>Caption image</Button>
+      </div>
+      <div data-cap-preview hidden class="grid gap-4 sm:grid-cols-[1fr_1.2fr]">
+        <img data-cap-image alt="Selected" class="max-h-80 w-full bg-bg object-contain" />
+        <div>
+          <p class="readout text-fg-3 mb-2">Caption</p>
+          <p data-cap-result class="field min-h-28 font-sans text-[20px] leading-snug text-fg">Caption will appear here…</p>
+        </div>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/caption.ts'
+</script>

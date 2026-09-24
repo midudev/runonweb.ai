@@ -1,0 +1,178 @@
+---
+import type { Model } from '../../data/models'
+import { INPUT_LABEL, models } from '../../data/models'
+import HeroInstall from '../HeroInstall.astro'
+import CodeBlock from './CodeBlock.astro'
+import PixelIcon from './PixelIcon.astro'
+import Button from '../ui/Button.astro'
+import { modelFaq } from '../../lib/seo'
+
+interface Props {
+  model: Model
+}
+const { model } = Astro.props
+const idx = models.findIndex((m) => m.slug === model.slug)
+const num = String(idx + 1).padStart(2, '0')
+const backend =
+  model.webgpu === 'none' ? 'WASM only' : model.webgpu === 'required' ? 'WebGPU only' : 'WebGPU · WASM fallback'
+const faq = modelFaq(model)
+type Spec = { k: string; v: string; href?: string; chips?: boolean }
+const specs: Spec[] = [
+  { k: 'Package', v: model.packagePath },
+  { k: 'Base model', v: `${model.weights.baseModel} · ${model.weights.author}`, href: model.weights.sourceUrl },
+  { k: 'License', v: model.weights.license },
+  { k: 'Weights', v: model.weights.id, href: `https://huggingface.co/${model.weights.id}` },
+  { k: 'Download', v: model.weights.size, chips: true },
+  { k: 'Quantization', v: model.weights.runsOn, chips: true },
+  { k: 'Backend', v: backend, chips: true },
+  { k: 'Input', v: INPUT_LABEL[model.input] },
+]
+---
+
+<article style={`--hue:${model.hue}`}>
+  <!-- Hero: spec-sheet header -->
+  <section class="container-x pt-8 sm:pt-12">
+    <nav aria-label="Breadcrumb">
+      <ol class="readout flex items-center gap-3 text-fg-3">
+        <li><a href="/" class="hover:text-fg">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/models" class="hover:text-fg">Models</a></li>
+        <li aria-hidden="true">/</li>
+        <li class="text-fg" aria-current="page">
+          {num} <span class="mx-1 text-fg-3" aria-hidden="true">/</span> {model.name}
+          {model.status === 'beta' && <span class="tag ml-2">Beta</span>}
+        </li>
+      </ol>
+    </nav>
+
+    <header class="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+      <div>
+        <p class="flex items-center gap-2.5">
+          <span class="led"></span>
+          <span class="readout">{model.task}</span>
+        </p>
+        <h1 class="mt-4 w-fit text-[clamp(4rem,12vw,9rem)] leading-[0.9]" data-vt="name" transition:name={`model-name-${model.slug}`} transition:animate="none">{model.name}</h1>
+        <p class="prose mt-7 max-w-xl text-[17px]">{model.description}</p>
+        <div class="mt-8 flex flex-wrap gap-2">
+          <Button href="#demo" variant="primary">Try it now</Button>
+          <Button href={`/docs#${model.slug}`}>Docs</Button>
+        </div>
+      </div>
+
+      <aside class="border border-line bg-bg" aria-label={`${model.name} at a glance`}>
+        <div class="px-6 py-8">
+          <div class="mx-auto aspect-[3/2] h-28" data-vt="icon" transition:name={`model-icon-${model.slug}`} transition:animate="none">
+            <PixelIcon rows={model.icon} hue={model.hue} class="motif-live h-full w-full" title={model.task} />
+          </div>
+        </div>
+        <dl class="grid grid-cols-2 gap-px border-t border-line bg-line">
+          {
+            [
+              ['Download', model.weights.size],
+              ['Backend', model.webgpu === 'none' ? 'WASM' : 'WebGPU'],
+              ['WebGPU', model.bench.webgpu ?? '—'],
+              ['WASM', model.bench.wasm ?? '—'],
+            ].map(([k, v]) => (
+              <div class="bg-bg px-6 py-3.5">
+                <dt class="readout text-fg-3">{k}</dt>
+                <dd class="pxl mt-1.5 text-[13px] leading-none text-fg">{v}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </aside>
+    </header>
+  </section>
+
+  <!-- Live demo -->
+  <section id="demo" class="container-x mt-20 scroll-mt-6 sm:mt-24" aria-labelledby="demo-title">
+    <div class="mb-5 flex items-end justify-between gap-4">
+      <h2 id="demo-title" class="text-[clamp(1.75rem,3.5vw,2.5rem)] leading-none">Try {model.name}</h2>
+      <p class="readout text-fg-3">Runs in this tab · nothing uploaded</p>
+    </div>
+    <div class="overflow-hidden border border-line bg-bg-2 p-5 sm:p-8">
+      <slot name="demo" />
+    </div>
+  </section>
+
+  <div class="container-x grid gap-16 pt-20 sm:pt-24 lg:grid-cols-[1fr_1.35fr] lg:gap-14">
+    <!-- Left column: what it is + specs -->
+    <div>
+      <section aria-labelledby="about-title">
+      <p class="readout text-fg-3">What it does</p>
+      <h2 id="about-title" class="mt-3 text-[clamp(1.75rem,3.5vw,2.5rem)] leading-[1.05]">{model.tagline}</h2>
+      {
+        model.notes.length > 0 && (
+          <ul class="prose mt-6 list-disc space-y-1.5 pl-5 text-[15px]">
+            {model.notes.map((note) => (
+              <li set:html={note.replace(/`([^`]+)`/g, '<code>$1</code>')} />
+            ))}
+          </ul>
+        )
+      }
+
+      </section>
+
+      <section aria-labelledby="specs-title">
+      <h2 id="specs-title" class="readout mt-14 flex items-center gap-2.5 text-fg-3">
+        <span class="led" aria-hidden="true"></span>Specifications
+      </h2>
+      <dl class="spec-sheet mt-4">
+        {
+          specs.map(({ k, v, href, chips }) => (
+            <div class="spec-row">
+              <dt>{k}</dt>
+              <dd>
+                {chips ? (
+                  v.split(' · ').map((chip, i) => (
+                    <span class:list={['spec-chip', { 'spec-chip--hue': i === 0 }]}>{chip}</span>
+                  ))
+                ) : href ? (
+                  <a href={href} target="_blank" rel="noopener" class="spec-link">
+                    {v}
+                  </a>
+                ) : (
+                  v
+                )}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      </section>
+    </div>
+
+    <!-- Right column: code + FAQ -->
+    <div>
+      <section aria-labelledby="start-title">
+      <h2 id="start-title" class="readout text-fg-3">Get started with {model.packagePath}</h2>
+      <div class="mt-3 space-y-4">
+        <HeroInstall size="sm" />
+        <CodeBlock code={model.usageSnippet} title={model.packagePath} language="ts" />
+      </div>
+      <p class="prose mt-4 text-[14px]">
+        Same shape everywhere: construct, <code>load()</code>, run, <code>dispose()</code>. Pass <code>onProgress</code>
+        to show download progress on first use.
+      </p>
+
+      </section>
+
+      <section aria-labelledby="faq-title">
+      <h2 id="faq-title" class="readout mt-14 text-fg-3">Questions about {model.name}</h2>
+      <div class="mt-3 divide-y divide-line border-y border-line">
+        {
+          faq.map(({ q, a }) => (
+            <details class="group py-4">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-sans text-[16px] font-semibold">
+                <h3 class="text-[16px] font-semibold tracking-normal">{q}</h3>
+                <span class="pxl text-fg-3 transition group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p class="prose mt-3 text-[15px]" set:html={a.replace(/`([^`]+)`/g, '<code>$1</code>')} />
+            </details>
+          ))
+        }
+      </div>
+      </section>
+    </div>
+  </div>
+</article>

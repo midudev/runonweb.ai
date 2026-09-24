@@ -1,0 +1,80 @@
+---
+interface Props {
+  class?: string
+}
+const { class: className = 'size-5' } = Astro.props
+
+/** Clockwise from top so the hover spark travels around the diamond. */
+const dots = [
+  { x: 10, y: 2, i: 0 },
+  { x: 18, y: 2, i: 1 },
+  { x: 14, y: 6, i: 2 },
+  { x: 18, y: 10, i: 3 },
+  { x: 14, y: 14, i: 4 },
+  { x: 18, y: 18, i: 5 },
+  { x: 10, y: 18, i: 6 },
+  { x: 2, y: 18, i: 7 },
+  { x: 6, y: 14, i: 8 },
+  { x: 2, y: 10, i: 9 },
+  { x: 6, y: 6, i: 10 },
+  { x: 2, y: 2, i: 11 },
+]
+---
+
+<svg viewBox="0 0 24 24" aria-hidden="true" class:list={['logo-mark', className]} shape-rendering="crispEdges" fill="currentColor">
+  {dots.map((d) => <rect class="logo-dot" x={d.x} y={d.y} width="4" height="4" style={`--i:${d.i}`} />)}
+  <rect class="logo-core" x="10" y="10" width="4" height="4" fill="var(--color-accent)" />
+</svg>
+
+<style>
+  :global(a:has(.logo-mark):hover) .logo-dot,
+  :global(a:has(.logo-mark):focus-visible) .logo-dot {
+    animation: logo-dot 960ms steps(2) infinite;
+    animation-delay: calc(var(--i) * -80ms);
+  }
+
+  :global(a:has(.logo-mark):hover) .logo-core,
+  :global(a:has(.logo-mark):focus-visible) .logo-core {
+    animation: logo-core 960ms steps(2) infinite;
+  }
+
+  :global([aria-busy='true'] .logo-dot) {
+    animation: logo-dot 720ms steps(2) infinite;
+    animation-delay: calc(var(--i) * -60ms);
+  }
+
+  :global([aria-busy='true'] .logo-core) {
+    animation: logo-core 720ms steps(2) infinite;
+  }
+
+  @keyframes logo-dot {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.18;
+    }
+  }
+
+  @keyframes logo-core {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(a:has(.logo-mark):hover) .logo-dot,
+    :global(a:has(.logo-mark):hover) .logo-core,
+    :global(a:has(.logo-mark):focus-visible) .logo-dot,
+    :global(a:has(.logo-mark):focus-visible) .logo-core,
+    :global([aria-busy='true'] .logo-dot),
+    :global([aria-busy='true'] .logo-core) {
+      animation: none;
+    }
+  }
+</style>

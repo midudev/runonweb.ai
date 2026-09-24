@@ -1,11 +1,154 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from '../layouts/Layout.astro'
+import ModelCard from '../components/models/ModelCard.astro'
+import PixelIcon from '../components/models/PixelIcon.astro'
+import Button from '../components/ui/Button.astro'
+import HeroCode from '../components/HeroCode.astro'
+import HeroInstall from '../components/HeroInstall.astro'
+import HowFlow from '../components/HowFlow.astro'
+import { models } from '../data/models'
+import { homeJsonLd } from '../lib/seo'
 ---
 
-<Layout>
-	<Welcome />
+<Layout ogImage="/og/site.png" jsonLd={homeJsonLd()}>
+  <!-- Hero -->
+  <section class="relative overflow-hidden border-b border-line" aria-labelledby="hero-title">
+    <canvas data-dither class="pixelated pointer-events-none absolute inset-0 h-full w-full opacity-60 [mask-image:linear-gradient(to_right,transparent_30%,black_62%)]" aria-hidden="true"></canvas>
+    <div class="container-x relative grid min-w-0 items-center gap-12 pt-16 pb-16 sm:pt-24 sm:pb-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+      <div class="min-w-0">
+        <p class="flex items-center gap-3">
+          <span class="led"></span>
+          <span class="readout">{models.length} modules · WebGPU + WASM · $0</span>
+        </p>
+        <h1 id="hero-title" class="mt-6 text-[clamp(2.75rem,6vw,4.5rem)] leading-[0.96]">
+          Free, open-source AI models that run in your browser.
+        </h1>
+        <p class="prose mt-6 max-w-lg text-[17px]">
+          Speech-to-text, background removal, OCR, translation, image generation and more as JavaScript modules. Nothing
+          leaves the device.
+        </p>
+        <div class="mt-8 flex max-w-lg flex-col gap-3.5">
+          <HeroInstall />
+          <div class="flex flex-wrap items-center gap-2.5">
+            <Button href="/models" variant="primary">Explore models</Button>
+            <Button href="/docs">Read the docs</Button>
+          </div>
+        </div>
+      </div>
+      <HeroCode />
+    </div>
+  </section>
+
+  <!-- Models -->
+  <section class="container-x mt-20 sm:mt-24" aria-labelledby="models-title">
+    <div class="mb-6 flex items-end justify-between gap-4">
+      <div>
+        <p class="readout text-fg-3">01 / Models</p>
+        <h2 id="models-title" class="mt-3 text-[clamp(2rem,4.5vw,3rem)] leading-none">Pick a task. Import a module.</h2>
+      </div>
+      <a href="/models" class="readout hidden hover:text-fg sm:block">All {models.length} models →</a>
+    </div>
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        models.map((m, i) => (
+          <li>
+            <ModelCard model={m} index={i} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- How -->
+  <section class="container-x mt-24 sm:mt-32" aria-labelledby="how-title">
+    <p class="readout text-fg-3">02 / How it works</p>
+    <div class="mt-3 grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-end">
+      <h2 id="how-title" class="text-[clamp(2rem,4.5vw,3rem)] leading-[1.05]">
+        From input to result, all in your browser.
+      </h2>
+      <p class="prose max-w-md lg:justify-self-end lg:pb-1">
+        Each module checks what your browser and its model support, chooses a tested precision, loads matching weights,
+        and returns plain JavaScript values.
+      </p>
+    </div>
+
+    <HowFlow />
+  </section>
+
+  <!-- Bench -->
+  <section class="container-x mt-24 sm:mt-32" aria-labelledby="bench-title">
+    <p class="readout text-fg-3">03 / Measured, not promised</p>
+    <div class="mt-3 flex flex-wrap items-end justify-between gap-4">
+      <h2 id="bench-title" class="text-[clamp(2rem,4.5vw,3rem)] leading-none">Real numbers from a real browser.</h2>
+      <p class="readout text-fg-3">Apple M-series · Chrome · weights cached</p>
+    </div>
+    <div class="mt-8 overflow-x-auto">
+      <table class="w-full min-w-[40rem] border-collapse">
+        <caption class="sr-only">
+          Download size and inference time on WebGPU and WASM for every runonweb model. Measured on an Apple
+          M-series laptop in Chrome with weights cached.
+        </caption>
+        <thead>
+          <tr class="border-b border-line text-left">
+            {['Model', 'Task', 'Download', 'WebGPU', 'WASM'].map((h) => (
+              <th scope="col" class="readout py-3 pr-6 font-normal text-fg-3">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-line">
+          {
+            models.map((m) => (
+              <tr class="group" style={`--hue:${m.hue}`}>
+                <th scope="row" class="py-3.5 pr-6 text-left font-normal">
+                  <a href={`/models/${m.slug}`} class="inline-flex items-center gap-2.5 font-sans text-[15px] font-semibold hover:underline underline-offset-4">
+                    <span class="led" />
+                    {m.name}
+                  </a>
+                </th>
+                <td class="py-3.5 pr-6 font-sans text-[14px] text-fg-2">{m.task}</td>
+                <td class="pxl py-3.5 pr-6 text-[13px]">{m.weights.size}</td>
+                <td class="pxl py-3.5 pr-6 text-[13px]">{m.bench.webgpu ?? <span class="text-fg-3" aria-label="not available">—</span>}</td>
+                <td class="pxl py-3.5 text-[13px]">{m.bench.wasm ?? <span class="text-fg-3" aria-label="not available">—</span>}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Credit -->
+  <section class="container-x mt-24 sm:mt-32" aria-labelledby="credit-title">
+    <div class="card grid gap-8 overflow-hidden p-8 sm:p-10 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+      <div>
+        <p class="readout text-fg-3">04 / Open weights, credited</p>
+        <h2 id="credit-title" class="mt-3 text-[clamp(1.75rem,4vw,2.75rem)] leading-[1.05]">
+          We don’t train these models. We make them run in a tab.
+        </h2>
+        <p class="prose mt-6 max-w-xl">
+          Whisper, RF-DETR, Depth Anything, MiniLM, OPUS-MT, Kokoro, BEN2, PP-OCRv6, Florence-2, Bonsai Image. Every module says which
+          weights it uses, who made them, and under which license. Only Apache-2.0 and MIT make the cut.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-2.5">
+          <Button href="/models" variant="primary">Explore models</Button>
+          <Button href="https://huggingface.co/models?library=transformers.js">Weights on Hugging Face ↗</Button>
+        </div>
+      </div>
+      <ul class="grid grid-cols-4 gap-3" aria-label="Model icons">
+        {models.map((m) => (
+          <li>
+            <a href={`/models/${m.slug}`} class="card flex aspect-square items-center justify-center p-4 transition hover:bg-bg-3" title={m.name} aria-label={`${m.name} — ${m.task}`}>
+              <PixelIcon rows={m.icon} hue={m.hue} class="h-full w-full" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
 </Layout>
+
+
+<script>
+  import '../scripts/hero-dither.ts'
+  import '../scripts/how-flow.ts'
+</script>

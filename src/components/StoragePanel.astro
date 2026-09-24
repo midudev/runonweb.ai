@@ -1,0 +1,65 @@
+---
+/** Gear button + popover: backend, models cached in this origin, delete one or all. */
+import Button from './ui/Button.astro'
+---
+
+<div class="relative">
+  <button
+    type="button"
+    popovertarget="storage-panel"
+    aria-label="Storage and settings"
+    class="group inline-flex size-9 items-center justify-center rounded-md text-fg-2 transition hover:bg-bg-3 hover:text-fg"
+    data-storage-toggle
+  >
+    <svg viewBox="0 0 16 16" class="size-4" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true">
+      <rect x="1" y="2" width="14" height="2" />
+      <rect x="1" y="1" width="4" height="4" />
+      <rect x="1" y="7" width="14" height="2" />
+      <rect x="6" y="6" width="4" height="4" />
+      <rect x="1" y="12" width="14" height="2" />
+      <rect x="11" y="11" width="4" height="4" />
+    </svg>
+    <span class="led absolute top-1.5 right-1.5 hidden size-1.5" data-storage-dot style="--hue: var(--color-accent)"></span>
+  </button>
+
+  <div
+    id="storage-panel"
+    popover
+    class="card fixed top-16 right-5 m-0 w-[24rem] max-w-[calc(100vw-2.5rem)] p-0 shadow-[0_30px_60px_-20px_rgb(0_0_0/0.8)] sm:right-8"
+    data-storage-panel
+  >
+    <div class="flex items-center justify-between border-b border-line px-4 py-3">
+      <span class="readout-strong">Storage · this site</span>
+      <span class="inline-flex items-center gap-2">
+        <span class="led" data-storage-backend-led style="--hue: var(--color-fg-3)"></span>
+        <span class="readout" data-storage-backend>Detecting…</span>
+      </span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-px bg-line">
+      <div class="bg-bg-2 px-4 py-3">
+        <p class="readout text-fg-3">Cached models</p>
+        <p class="pxl mt-1 text-[15px]" data-storage-count>—</p>
+      </div>
+      <div class="bg-bg-2 px-4 py-3">
+        <p class="readout text-fg-3">On disk</p>
+        <p class="pxl mt-1 text-[15px]" data-storage-total>—</p>
+      </div>
+    </div>
+
+    <ul class="max-h-72 divide-y divide-line overflow-y-auto border-t border-line" data-storage-list>
+      <li class="px-4 py-6 text-center">
+        <span class="readout text-fg-3">Reading cache…</span>
+      </li>
+    </ul>
+
+    <div class="flex items-center justify-between gap-3 border-t border-line px-4 py-3">
+      <p class="readout text-fg-3" data-storage-note>Weights download again on next use.</p>
+      <Button size="sm" attr="data-storage-clear">Delete all data</Button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import '../scripts/storage-panel.ts'
+</script>

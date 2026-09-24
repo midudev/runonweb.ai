@@ -1,0 +1,35 @@
+---
+import type { Sample } from '../../data/models'
+import Button from '../ui/Button.astro'
+
+interface Props {
+  prefix: string
+  samples: Sample[]
+}
+const { prefix, samples } = Astro.props
+const attr: Record<string, string> = { ['data-' + prefix + '-samples']: '', 'data-specs': JSON.stringify(samples) }
+---
+
+<div {...attr} class="flex flex-wrap items-center gap-2">
+  <span class="readout mr-1 text-fg-3">Try with</span>
+  {
+    samples.map((s, i) =>
+      s.kind === 'image' ? (
+        <button
+          type="button"
+          data-sample={i}
+          class="group/s relative size-14 overflow-hidden border border-line bg-bg-3 transition hover:border-fg-2 focus-visible:border-fg focus-visible:outline-none"
+          title={s.label}
+        >
+          <img src={s.src} alt={s.label} loading="lazy" decoding="async" class="size-full object-cover transition group-hover/s:scale-105" />
+        </button>
+      ) : (
+        <Button variant="soft" size="sm" data-sample={i} aria-pressed="false">
+          {s.label}
+          {s.kind === 'audio' && <span class="text-fg-3">{s.duration}</span>}
+        </Button>
+      )
+    )
+  }
+  <slot />
+</div>

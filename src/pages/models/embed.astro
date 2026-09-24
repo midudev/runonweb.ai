@@ -1,0 +1,44 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('embed')
+if (!model) throw new Error('Model embed not found')
+const seo = modelSeo(model)
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="emb" idle="Pick a sample or type your own, then rank" />
+      <Samples prefix="emb" samples={model.samples} />
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="readout text-fg-3 mb-2 block">Query</span>
+          <textarea data-emb-query rows="3" class="field">How do I reset my password?</textarea>
+        </label>
+        <label class="block">
+          <span class="readout text-fg-3 mb-2 block">Candidates · one per line</span>
+          <textarea data-emb-candidates rows="6" class="field">I forgot my login credentials
+Where can I change my account email?
+What is the weather today?
+The quick brown fox jumps over the lazy dog
+Steps to recover access to my account</textarea>
+        </label>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-emb-run" variant="primary">Rank by similarity</Button>
+      </div>
+      <ol data-emb-result class="space-y-2 font-mono text-[13px]"></ol>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/embed.ts'
+</script>

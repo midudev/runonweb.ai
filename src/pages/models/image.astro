@@ -1,0 +1,86 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+import { DEFAULT_IMAGE_SIZE, IMAGE_SIZES, type ImageSize } from 'runonweb/image/sizes'
+
+const model = getModel('image')
+if (!model) throw new Error('Model image not found')
+const seo = modelSeo(model)
+
+const sizes = (['binary', 'ternary'] as ImageSize[]).map((id) => ({
+  id,
+  ...IMAGE_SIZES[id],
+}))
+
+const resolutions = [
+  { id: '512', label: '512²', hint: 'Preview' },
+  { id: '768', label: '768²', hint: 'Balanced' },
+  { id: '1024', label: '1024²', hint: 'Native' },
+]
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="img" idle="WebGPU required · first download is several GB" />
+      <div>
+        <p class="readout text-fg-3 mb-2">Weights</p>
+        <div class="flex flex-wrap gap-2" data-img-sizes>
+          {
+            sizes.map((s) => (
+              <button
+                type="button"
+                data-img-size={s.id}
+                aria-pressed={s.id === DEFAULT_IMAGE_SIZE ? 'true' : 'false'}
+                class="btn btn-soft h-auto flex-col items-start gap-1 px-3 py-2.5 text-left aria-pressed:bg-fg/15 aria-pressed:ring-1 aria-pressed:ring-line-2"
+              >
+                <span class="font-sans text-[13px] font-semibold">
+                  {s.label}
+                  <span class="readout ml-2 text-fg-3">{s.download}</span>
+                </span>
+                <span class="readout text-fg-3">{s.bits} · {s.quality}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <div>
+        <p class="readout text-fg-3 mb-2">Resolution</p>
+        <div class="flex flex-wrap gap-2" data-img-resolutions>
+          {
+            resolutions.map((r, i) => (
+              <button
+                type="button"
+                data-img-res={r.id}
+                aria-pressed={i === 0 ? 'true' : 'false'}
+                class="btn btn-soft h-auto flex-col items-start gap-1 px-3 py-2.5 text-left aria-pressed:bg-fg/15 aria-pressed:ring-1 aria-pressed:ring-line-2"
+              >
+                <span class="font-sans text-[13px] font-semibold">{r.label}</span>
+                <span class="readout text-fg-3">{r.hint}</span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <Samples prefix="img" samples={model.samples} />
+      <textarea data-img-input rows="3" class="field" placeholder="Describe the image…">A small bonsai tree in a quiet ceramic studio, soft morning light, photorealistic</textarea>
+      <div class="flex flex-wrap items-center gap-2">
+        <Button attr="data-img-run" variant="primary">Generate</Button>
+        <Button as="a" attr="data-img-download" hidden download="runonweb-imagine.png">Download PNG</Button>
+        <span data-img-seed class="readout text-fg-3"></span>
+      </div>
+      <div data-img-preview hidden class="overflow-hidden border border-line bg-bg">
+        <img data-img-result alt="Generated image" class="mx-auto max-h-[32rem] w-full object-contain" />
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/image.ts'
+</script>

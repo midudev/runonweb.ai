@@ -1,0 +1,93 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import WaveformPlayer from '../../components/models/WaveformPlayer.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+import { DEFAULT_VOICE, TTS_LANGUAGES, voiceGroupsFor, voiceLabel } from 'runonweb/tts/voices'
+import { DEFAULT_TTS_SIZE, TTS_SIZES, type TTSSize } from 'runonweb/tts/sizes'
+
+const model = getModel('tts')
+if (!model) throw new Error('Model tts not found')
+const seo = modelSeo(model)
+
+const sizes = (['tiny', 'small', 'multi'] as TTSSize[]).map((id) => ({
+  id,
+  ...TTS_SIZES[id],
+}))
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="tts" idle="Pick a size and a voice, then a sample or type your own" />
+      <div>
+        <p class="readout text-fg-3 mb-2">Model size</p>
+        <div class="flex flex-wrap gap-2" data-tts-sizes>
+          {
+            sizes.map((s) => (
+              <button
+                type="button"
+                data-tts-size={s.id}
+                aria-pressed={s.id === DEFAULT_TTS_SIZE ? 'true' : 'false'}
+                class="btn btn-soft h-auto flex-col items-start gap-1 px-3 py-2.5 text-left aria-pressed:bg-fg/15 aria-pressed:ring-1 aria-pressed:ring-line-2"
+              >
+                <span class="font-sans text-[13px] font-semibold">
+                  {s.label}
+                  <span class="readout ml-2 text-fg-3">{s.downloadMB}</span>
+                </span>
+                <span class="readout text-fg-3">
+                  {s.engine} · {s.quality}
+                </span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-[1fr_auto]">
+      <label class="block">
+        <p class="readout text-fg-3 mb-2">Voice</p>
+        <select data-tts-voice class="field">
+          {
+            voiceGroupsFor(DEFAULT_TTS_SIZE).map((group) => (
+              <optgroup label={group.label}>
+                {group.voices.map((v) => (
+                  <option value={v.id} selected={v.id === DEFAULT_VOICE}>
+                    {voiceLabel(v)}
+                  </option>
+                ))}
+              </optgroup>
+            ))
+          }
+        </select>
+      </label>
+      <label class="block" data-tts-language-wrap hidden>
+        <p class="readout text-fg-3 mb-2">Language</p>
+        <select data-tts-language class="field">
+          {
+            Object.entries(TTS_LANGUAGES).map(([code, name]) => (
+              <option value={code} selected={code === 'en'}>
+                {name}
+              </option>
+            ))
+          }
+        </select>
+      </label>
+      </div>
+      <Samples prefix="tts" samples={model.samples} />
+      <textarea data-tts-input rows="4" class="field" placeholder="Type something to say…">Hello from the browser. This voice was generated on your device.</textarea>
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-tts-run" variant="primary">Speak</Button>
+        <Button as="a" attr="data-tts-download" hidden download="runonweb-voice.wav">Download WAV</Button>
+      </div>
+      <WaveformPlayer prefix="tts" />
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/tts.ts'
+</script>

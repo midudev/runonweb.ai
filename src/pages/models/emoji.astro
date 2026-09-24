@@ -1,0 +1,36 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('emoji')
+if (!model) throw new Error('Model emoji not found')
+const seo = modelSeo(model)
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="em" idle="Pick a sample or type a sentence" />
+      <Samples prefix="em" samples={model.samples} />
+      <div class="grid gap-4 sm:grid-cols-2">
+        <textarea data-em-input rows="4" class="field" placeholder="Type an English sentence…">Good morning! Coffee, sunshine and a long walk on the beach</textarea>
+        <div data-em-result class="field min-h-24 text-3xl leading-relaxed tracking-wide text-fg">
+          <span class="text-base text-fg-2">Emojis will appear here…</span>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <Button attr="data-em-run" variant="primary">Emojify</Button>
+        <span class="font-mono text-[12px] text-fg-3">~4 MB, cached after the first load</span>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/emoji.ts'
+</script>

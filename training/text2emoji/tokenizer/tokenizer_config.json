@@ -1,0 +1,8 @@
+{
+  "tokenizer_class": "PreTrainedTokenizerFast",
+  "model_max_length": 128,
+  "pad_token": "<pad>",
+  "eos_token": "</s>",
+  "unk_token": "<unk>",
+  "clean_up_tokenization_spaces": false
+}

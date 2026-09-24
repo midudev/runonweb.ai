@@ -1,0 +1,170 @@
+<figure class="how-flow card mt-10 overflow-hidden" data-how-flow data-example="audio" data-route="webgpu">
+  <figcaption class="how-head">
+    <div>
+      <p class="readout how-kicker"><span class="how-live-dot" aria-hidden="true"></span> AI model walkthrough</p>
+      <h3>Audio, image, or text. A model for each.</h3>
+      <p class="how-subtitle">Pick an input to see its AI model, local runtime, and output.</p>
+    </div>
+    <span class="how-example" data-module-path>runonweb/stt</span>
+  </figcaption>
+
+  <div class="how-stage">
+    <div class="how-step how-input">
+      <p class="how-step-label"><span>01</span> Choose an input</p>
+      <div class="how-media-list" role="group" aria-label="Choose an input example">
+        <button class="how-media" type="button" data-how-example-choice="audio" aria-pressed="true">
+          <span class="how-media-icon" aria-hidden="true">▥</span>
+          <span class="how-media-copy"><strong>Audio</strong><small>Microphone or file</small></span>
+        </button>
+        <button class="how-media" type="button" data-how-example-choice="image" aria-pressed="false">
+          <span class="how-media-icon" aria-hidden="true">▧</span>
+          <span class="how-media-copy"><strong>Image</strong><small>Photo or Blob</small></span>
+        </button>
+        <button class="how-media" type="button" data-how-example-choice="text" aria-pressed="false">
+          <span class="how-media-icon how-text-icon" aria-hidden="true">T</span>
+          <span class="how-media-copy"><strong>Text</strong><small>JavaScript string</small></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="how-connector" aria-hidden="true"><span></span></div>
+
+    <div class="how-step how-loader">
+      <p class="how-step-label"><span>02</span> Load an AI model</p>
+      <div class="how-code">load<span>()</span></div>
+      <div class="how-model">
+        <span class="how-model-caption">Model for this task</span>
+        <strong data-model-name>Scribe</strong>
+        <span class="how-base-model" data-base-model>Whisper tiny.en</span>
+      </div>
+      <p class="how-model-task" data-model-task>Transcribes speech into text.</p>
+      <div class="how-step-bottom">Matching weights · cached after first load</div>
+    </div>
+
+    <div class="how-connector" aria-hidden="true"><span></span></div>
+
+    <div class="how-step how-runtime">
+      <p class="how-step-label"><span>03</span> Run locally</p>
+      <p class="how-inference">The AI model runs in your browser.</p>
+      <div class="how-route-options" role="group" aria-label="Preview a supported runtime">
+        <button type="button" class="how-route" data-how-choice="webgpu" aria-pressed="true">
+          <span class="how-route-icon" aria-hidden="true">▦</span>
+          <span class="how-route-copy"><strong>WebGPU</strong><small>GPU when supported</small></span>
+          <span class="how-precision" data-gpu-dtype>fp32</span>
+        </button>
+        <span class="how-or" aria-hidden="true">or</span>
+        <button type="button" class="how-route" data-how-choice="wasm" aria-pressed="false">
+          <span class="how-route-icon" aria-hidden="true">▤</span>
+          <span class="how-route-copy"><strong>WASM</strong><small>Compatible CPU path</small></span>
+          <span class="how-precision" data-wasm-dtype>q8</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="how-connector" aria-hidden="true"><span></span></div>
+
+    <div class="how-step how-output">
+      <p class="how-step-label"><span>04</span> Get an output</p>
+      <div class="how-output-list">
+        <div class="how-output-row" data-how-output="text" data-selected>
+          <span class="how-media-icon how-text-icon" aria-hidden="true">T</span>
+          <span class="how-media-copy"><strong>Text</strong><small>Transcript</small></span>
+        </div>
+        <div class="how-output-row" data-how-output="image">
+          <span class="how-media-icon" aria-hidden="true">▧</span>
+          <span class="how-media-copy"><strong>Image</strong><small>Transparent PNG</small></span>
+        </div>
+        <div class="how-output-row" data-how-output="audio">
+          <span class="how-media-icon" aria-hidden="true">▥</span>
+          <span class="how-media-copy"><strong>Audio</strong><small>PCM or WAV</small></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="how-foot">
+    <p><span class="how-foot-icon" aria-hidden="true">✓</span><strong>Real modules:</strong> Scribe uses Whisper, Remover uses BEN2, and Voice uses Kokoro.</p>
+    <span class="how-foot-hint">Pick an input to trace its path</span>
+  </div>
+</figure>
+
+<style>
+  .how-flow { --flow-color:#5ee7ff; background:#111113; }
+  .how-flow[data-example='image'] { --flow-color:#ff8f5e; }
+  .how-flow[data-example='text'] { --flow-color:#e4e4e7; }
+  .how-head { display:flex; align-items:flex-start; justify-content:space-between; gap:2rem; padding:1.65rem 1.8rem 1.5rem; border-bottom:1px solid var(--color-line); }
+  .how-kicker { display:flex; align-items:center; gap:.55rem; color:var(--color-accent-2); }
+  .how-live-dot { width:7px; height:7px; background:var(--color-accent); box-shadow:0 0 12px rgb(255 179 64 / .55); }
+  .how-head h3 { margin:.8rem 0 .35rem; font-size:clamp(1.35rem,2.5vw,1.85rem); line-height:1.08; }
+  .how-subtitle { max-width:40rem; color:var(--color-fg-2); font-size:13px; line-height:1.5; }
+  .how-example { flex:none; margin-top:.1rem; padding:.55rem .65rem; border:1px solid var(--color-line-2); border-radius:6px; color:var(--color-fg-2); font-family:var(--font-mono); font-size:11px; }
+  .how-stage { display:grid; grid-template-columns:minmax(0,1fr) 30px minmax(0,1.04fr) 30px minmax(0,1.28fr) 30px minmax(0,1.05fr); align-items:stretch; padding:2rem 1.8rem; background:radial-gradient(ellipse at 55% 42%,rgb(255 179 64 / .055),transparent 55%),radial-gradient(rgb(255 255 255 / .055) .7px,transparent .7px); background-size:auto,16px 16px; }
+  .how-step { position:relative; display:flex; flex-direction:column; min-width:0; min-height:278px; padding:1.05rem; border:1px solid var(--color-line-2); border-radius:12px; background:#171719; box-shadow:0 12px 28px rgb(0 0 0 / .12); }
+  .how-step-label { display:flex; align-items:center; gap:.55rem; font-family:var(--font-pixel); font-size:11px; line-height:1.1; text-transform:uppercase; letter-spacing:.04em; color:var(--color-fg-2); }
+  .how-step-label span { color:var(--color-accent); }
+  .how-media-list,.how-output-list { display:grid; gap:.42rem; margin:auto 0; }
+  .how-media,.how-output-row { display:flex; align-items:center; width:100%; gap:.6rem; min-height:59px; padding:.55rem .6rem; border:1px solid var(--color-line-2); border-radius:7px; background:#1a1a1c; color:var(--color-fg-2); text-align:left; transition:background .25s,border-color .25s,box-shadow .25s,color .25s; }
+  .how-media { cursor:pointer; }
+  .how-media:hover,.how-media:focus-visible,.how-route:hover,.how-route:focus-visible { border-color:var(--color-accent); outline:none; }
+  .how-media[aria-pressed='true'],.how-output-row[data-selected] { color:var(--color-fg); border-color:var(--flow-color); background:color-mix(in srgb,var(--flow-color) 11%,#171719); box-shadow:inset 3px 0 var(--flow-color),0 0 19px color-mix(in srgb,var(--flow-color) 12%,transparent); }
+  .how-media-icon { display:grid; place-items:center; flex:none; width:29px; height:29px; border:1px solid currentColor; border-radius:4px; font-family:var(--font-pixel); font-size:18px; line-height:1; }
+  .how-text-icon { font-size:14px; }
+  .how-media[aria-pressed='true'] .how-media-icon,.how-output-row[data-selected] .how-media-icon { color:var(--flow-color); }
+  .how-media-copy { display:grid; gap:2px; min-width:0; }
+  .how-media-copy strong { font-size:13px; font-weight:600; line-height:1.05; }
+  .how-media-copy small { font-size:10px; line-height:1.2; }
+  .how-code { margin:1.25rem 0 1.15rem; font-family:var(--font-pixel); font-size:clamp(27px,3vw,39px); line-height:1; color:var(--color-accent-2); }
+  .how-code span { color:var(--color-fg-2); }
+  .how-model { display:grid; gap:.25rem; padding:.75rem .7rem; border:1px solid color-mix(in srgb,var(--flow-color) 35%,transparent); border-radius:7px; background:color-mix(in srgb,var(--flow-color) 7%,#171719); }
+  .how-model-caption { color:var(--flow-color); font-family:var(--font-pixel); font-size:9px; line-height:1.2; text-transform:uppercase; }
+  .how-model strong { font-size:18px; line-height:1.05; }
+  .how-base-model { color:var(--color-fg-2); font-family:var(--font-mono); font-size:10px; line-height:1.3; }
+  .how-model-task { margin-top:.65rem; color:var(--color-fg-2); font-size:11px; line-height:1.35; }
+  .how-step-bottom { margin-top:auto; padding-top:.7rem; color:var(--color-fg-2); font-family:var(--font-mono); font-size:10px; line-height:1.3; }
+  .how-connector { position:relative; align-self:center; height:1px; background:var(--flow-color); opacity:.8; }
+  .how-connector::before { content:''; position:absolute; top:-3px; right:0; width:7px; height:7px; border-top:1px solid var(--flow-color); border-right:1px solid var(--flow-color); transform:rotate(45deg); }
+  .how-connector span { position:absolute; top:-2px; left:0; width:5px; height:5px; background:var(--flow-color); box-shadow:0 0 10px var(--flow-color); opacity:0; }
+  .how-runtime { border-color:rgb(255 179 64 / .35); background:linear-gradient(145deg,#211b14,#181719 65%); }
+  .how-inference { margin:1.2rem 0 0; color:var(--color-fg-2); font-size:12px; line-height:1.4; }
+  .how-route-options { display:grid; gap:.35rem; margin:auto 0 0; }
+  .how-route { display:flex; align-items:center; width:100%; gap:.55rem; min-height:60px; padding:.5rem .6rem; border:1px solid var(--color-line-2); border-radius:7px; background:#1a1a1c; color:var(--color-fg-2); text-align:left; cursor:pointer; transition:background .25s,border-color .25s,box-shadow .25s,color .25s; }
+  .how-route[aria-pressed='true'] { color:var(--color-fg); border-color:var(--color-accent); background:rgb(255 179 64 / .11); box-shadow:inset 3px 0 var(--color-accent),0 0 19px rgb(255 179 64 / .09); }
+  .how-route-icon { display:grid; place-items:center; flex:none; width:26px; height:26px; border:1px solid currentColor; border-radius:4px; font-size:17px; line-height:1; }
+  .how-route[aria-pressed='true'] .how-route-icon { color:var(--color-accent-2); }
+  .how-route-copy { display:grid; gap:2px; min-width:0; }
+  .how-route-copy strong { font-size:13px; font-weight:600; line-height:1; }
+  .how-route-copy small { font-size:10px; line-height:1.2; }
+  .how-precision { margin-left:auto; color:var(--color-accent-2); font-family:var(--font-mono); font-size:12px; }
+  .how-or { color:var(--color-fg-2); font-family:var(--font-mono); font-size:9px; line-height:10px; text-align:center; text-transform:uppercase; }
+  .how-output { border-color:rgb(255 179 64 / .25); }
+  .how-foot { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.95rem 1.8rem; border-top:1px solid var(--color-line); background:#151416; }
+  .how-foot p { display:flex; align-items:center; gap:.5rem; min-width:0; color:var(--color-fg-2); font-size:11px; line-height:1.4; }
+  .how-foot strong { color:var(--color-accent-2); font-weight:600; white-space:nowrap; }
+  .how-foot-icon { display:grid; place-items:center; flex:none; width:17px; height:17px; border:1px solid var(--color-accent); border-radius:50%; color:var(--color-accent); font-size:11px; line-height:1; }
+  .how-foot-hint { flex:none; color:var(--color-fg-2); font-family:var(--font-mono); font-size:10px; }
+  .how-flow[data-in-view] .how-connector span { animation:how-packet 2.7s ease-in-out infinite; }
+  .how-flow[data-in-view] .how-connector:nth-of-type(4) span { animation-delay:.35s; }
+  .how-flow[data-in-view] .how-connector:nth-of-type(6) span { animation-delay:.7s; }
+  @keyframes how-packet { 0% { left:0;opacity:0; } 15%,75% { opacity:1; } 100% { left:100%;opacity:0; } }
+  @media (max-width:980px) {
+    .how-head { padding:1.35rem 1.2rem; }
+    .how-example { display:none; }
+    .how-stage { display:flex; flex-direction:column; padding:1.2rem; }
+    .how-step { min-height:0; padding:1rem; }
+    .how-media-list,.how-output-list { margin:1rem 0 0; }
+    .how-code { margin:1.25rem 0 1rem; }
+    .how-step-bottom { margin-top:1rem; }
+    .how-connector { align-self:center; width:1px; height:25px; }
+    .how-connector::before { top:auto; right:-3px; bottom:0; transform:rotate(135deg); }
+    .how-connector span { top:0; left:-2px; }
+    .how-route-options { margin-top:1.15rem; }
+    .how-foot { align-items:flex-start; padding:1rem 1.2rem; }
+    .how-foot-hint { display:none; }
+    .how-flow[data-in-view] .how-connector span { animation-name:how-packet-vertical; }
+    @keyframes how-packet-vertical { 0% { top:0;opacity:0; } 15%,75% { opacity:1; } 100% { top:100%;opacity:0; } }
+  }
+  @media (prefers-reduced-motion:reduce) {
+    .how-flow[data-in-view] .how-connector span { animation:none; }
+    .how-media,.how-output-row,.how-route { transition:none; }
+  }
+</style>

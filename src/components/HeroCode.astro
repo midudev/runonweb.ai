@@ -1,0 +1,214 @@
+---
+/**
+ * Home hero: one usage snippet per model, rotating every few seconds.
+ * All snippets are highlighted at build time and stacked in one grid cell,
+ * so the panel keeps the height of the tallest one and never jumps.
+ */
+import { models } from '../data/models'
+import { HERO_SNIPPETS } from '../data/hero-snippets'
+import { highlightCode } from '../lib/syntax-theme'
+
+interface Props {
+  /** Milliseconds each snippet stays on screen. */
+  interval?: number
+}
+const { interval = 5000 } = Astro.props
+
+const slides = await Promise.all(
+  models.map(async (m) => {
+    let i = 0
+    const html = (await highlightCode(HERO_SNIPPETS[m.slug] ?? m.usageSnippet, 'ts')).replace(
+      /<span class="line"/g,
+      () => `<span class="line" style="--line:${i++}"`,
+    )
+    return { model: m, html }
+  }),
+)
+const first = models[0]!
+---
+
+<div
+  class="hero-code relative min-w-0 overflow-hidden border border-line bg-bg-2/90 shadow-[0_30px_80px_rgb(0_0_0/0.5)] backdrop-blur"
+  data-hero-code
+  data-interval={interval}
+  style={`--hue:${first.hue}`}
+>
+  <div class="relative flex h-11 items-center justify-between gap-3 border-b border-line px-4">
+    <span class="flex min-w-0 items-center gap-2.5">
+      <span class="led shrink-0"></span>
+      <span class="readout-strong truncate" data-hero-code-title>{first.name} · {first.task}</span>
+    </span>
+    <span class="readout text-fg-3" data-hero-code-index>01 / {String(models.length).padStart(2, '0')}</span>
+    <span class="hero-code-progress absolute inset-x-0 bottom-0 h-px origin-left bg-[color:var(--hue)]" aria-hidden="true"></span>
+  </div>
+
+  <div class="grid min-w-0" aria-live="polite">
+    {
+      slides.map(({ model, html }, i) => (
+        <div
+          class="hero-code-slide col-start-1 row-start-1 min-w-0"
+          data-hero-code-slide
+          data-slug={model.slug}
+          data-on={i === 0 ? '' : undefined}
+          aria-hidden={i === 0 ? undefined : 'true'}
+          set:html={html}
+        />
+      ))
+    }
+  </div>
+
+  <ul class="flex flex-wrap gap-1.5 border-t border-line px-3.5 py-3" aria-label="Models">
+    {
+      models.map((m, i) => (
+        <li>
+          <button
+            type="button"
+            class="hero-code-chip"
+            data-hero-code-chip
+            data-index={i}
+            data-hue={m.hue}
+            style={`--hue:${m.hue}`}
+            aria-pressed={i === 0 ? 'true' : 'false'}
+            title={m.task}
+          >
+            <span class="hero-code-pip" aria-hidden="true"></span>
+            {m.name}
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  /* Outgoing snippet drops out fast; incoming one prints line by line. */
+  .hero-code-slide {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms ease-in;
+  }
+  .hero-code-slide[data-on] {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0ms;
+  }
+  .hero-code-slide :global(pre) {
+    margin: 0;
+    overflow-x: auto;
+    padding: 1.1rem 1.25rem 1.25rem;
+    background: transparent !important;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .hero-code-slide :global(code) {
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+  }
+  .hero-code-slide :global(.line) {
+    display: inline-block;
+    min-height: 1.7em;
+  }
+  .hero-code-slide[data-on][data-typed] :global(.line) {
+    animation: hero-code-line 360ms steps(4, end) both;
+    animation-delay: calc(var(--line, 0) * 55ms);
+  }
+  .hero-code-slide[data-on] :global(.line):last-child::after {
+    content: '';
+    display: inline-block;
+    width: 0.55em;
+    height: 1.1em;
+    margin-left: 2px;
+    vertical-align: -0.2em;
+    background: var(--hue);
+    animation: hero-code-cursor 1s steps(2, end) infinite;
+  }
+  @keyframes hero-code-line {
+    from {
+      opacity: 0;
+      translate: -6px 0;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+  @keyframes hero-code-cursor {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  .hero-code-progress {
+    scale: 0 1;
+  }
+  .hero-code[data-running] .hero-code-progress {
+    animation: hero-code-progress var(--interval, 5000ms) linear forwards;
+  }
+  .hero-code[data-paused] .hero-code-progress {
+    animation-play-state: paused;
+  }
+  @keyframes hero-code-progress {
+    from {
+      scale: 0 1;
+    }
+    to {
+      scale: 1 1;
+    }
+  }
+  .hero-code-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    height: 1.7rem;
+    padding: 0 0.55rem 0 0.4rem;
+    border: 1px solid var(--color-line);
+    background: transparent;
+    color: var(--color-fg-2);
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      color 140ms ease,
+      border-color 140ms ease,
+      background 140ms ease;
+  }
+  .hero-code-pip {
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
+    background: var(--hue);
+  }
+  .hero-code-chip:hover {
+    color: var(--color-fg);
+    border-color: color-mix(in oklab, var(--hue) 55%, transparent);
+  }
+  .hero-code-chip[aria-pressed='true'] {
+    color: var(--color-fg);
+    border-color: var(--hue);
+    background: color-mix(in oklab, var(--hue) 16%, transparent);
+  }
+  .hero-code-chip:focus-visible {
+    outline: 2px solid var(--hue);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-code-slide,
+    .hero-code-slide[data-on][data-typed] :global(.line),
+    .hero-code-slide[data-on] :global(.line):last-child::after {
+      transition: none;
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  import '../scripts/hero-code.ts'
+</script>

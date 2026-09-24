@@ -1,0 +1,107 @@
+---
+import Layout from '../layouts/Layout.astro'
+import CodeBlock from '../components/models/CodeBlock.astro'
+import { models, INSTALL_SNIPPET } from '../data/models'
+import { docsJsonLd } from '../lib/seo'
+
+const pattern = `const m = new Module({ onProgress })
+await m.load()          // downloads + caches weights, safe to call twice
+await m.<task>(input)   // the actual work
+m.dispose()             // free memory`
+
+const core = `import { isWebGPUAvailable, resolveDevice } from 'runonweb/core'
+
+const ok = await isWebGPUAvailable()
+const device = await resolveDevice() // 'webgpu' | 'wasm'`
+---
+
+<Layout
+  title="Docs: install and run AI models in the browser"
+  description="Install runonweb and use any module in a few lines: speech-to-text, transcript cleanup, background removal, captioning, depth, object detection, OCR, embeddings, translation, TTS and image generation. API, base model and notes for every task."
+  ogImage="/og/docs.png"
+  ogImageAlt="runonweb docs — install and use browser AI modules"
+  ogType="article"
+  jsonLd={docsJsonLd()}
+>
+  <div class="container-x grid gap-12 pt-10 sm:pt-16 lg:grid-cols-[13rem_1fr]">
+    <nav class="lg:sticky lg:top-8 lg:self-start" aria-label="On this page">
+      <p class="readout mb-4 text-fg-3" aria-hidden="true">On this page</p>
+      <ul class="space-y-2 font-sans text-[15px]">
+        <li><a href="#install" class="hover:underline underline-offset-4">Install</a></li>
+        <li><a href="#pattern" class="hover:underline underline-offset-4">The pattern</a></li>
+        <li><a href="#core" class="hover:underline underline-offset-4">Core</a></li>
+        {models.map((m) => (
+          <li>
+            <a href={`#${m.slug}`} class="hover:underline underline-offset-4">{m.name}</a>
+            <span class="ml-1.5 font-mono text-[11px] text-fg-3">{m.packagePath}</span>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <article class="min-w-0 max-w-3xl">
+      <h1 class="text-[clamp(3rem,8vw,5.5rem)] leading-[0.95]">Docs</h1>
+      <p class="prose mt-6">
+        runonweb is a set of ES modules. Each one picks WebGPU or WASM, downloads the right weights,
+        and decodes inputs for you.
+      </p>
+
+      <section id="install" class="mt-16 scroll-mt-8" aria-labelledby="install-title">
+        <h2 id="install-title" class="text-[30px] leading-none">Install runonweb</h2>
+        <div class="mt-5"><CodeBlock code={INSTALL_SNIPPET} title="Install" language="bash" /></div>
+        <p class="prose mt-4">
+          Requires a bundler that understands package <code>exports</code> (Vite, Next, Astro, Bun…). Weights are
+          fetched from Hugging Face at runtime and cached by the browser.
+        </p>
+      </section>
+
+      <section id="pattern" class="mt-16 scroll-mt-8" aria-labelledby="pattern-title">
+        <h2 id="pattern-title" class="text-[30px] leading-none">The pattern: load, run, dispose</h2>
+        <p class="prose mt-4">Every module follows the same shape:</p>
+        <div class="mt-5"><CodeBlock code={pattern} title="Pattern" language="ts" /></div>
+        <p class="prose mt-4">
+          Each module also exports a one-shot function (<code>transcribe</code>, <code>removeBackground</code>,
+          <code>caption</code>, <code>read</code>…) that loads, runs and disposes in one call. Use the class when you will run more
+          than once.
+        </p>
+      </section>
+
+      <section id="core" class="mt-16 scroll-mt-8" aria-labelledby="core-title">
+        <h2 id="core-title" class="text-[30px] leading-none">Core: WebGPU detection</h2>
+        <div class="mt-5"><CodeBlock code={core} title="runonweb/core" language="ts" /></div>
+      </section>
+
+      {
+        models.map((m) => (
+          <section id={m.slug} class="mt-16 scroll-mt-8 border-t border-line pt-12" aria-labelledby={`${m.slug}-title`}>
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="led" style={`--hue:${m.hue}`} />
+              <h2 id={`${m.slug}-title`} class="text-[30px] leading-none">{m.name} <span class="sr-only">— {m.task}</span></h2>
+              <span class="tag" aria-hidden="true">{m.task}</span>
+              <a href={`/models/${m.slug}`} class="ml-auto font-mono text-[12px] text-fg-2 underline underline-offset-4">
+                Live demo →
+              </a>
+            </div>
+            <p class="prose mt-4">{m.description}</p>
+            <div class="mt-5">
+              <CodeBlock code={m.usageSnippet} title={m.packagePath} language="ts" />
+            </div>
+            <dl class="mt-4 grid gap-x-6 gap-y-2 font-mono text-[13px] sm:grid-cols-2">
+              <div><dt class="inline text-fg-3">Base · </dt><dd class="inline"><a href={m.weights.sourceUrl} target="_blank" rel="noopener" class="underline underline-offset-4">{m.weights.baseModel}</a> by {m.weights.author}</dd></div>
+              <div><dt class="inline text-fg-3">License · </dt><dd class="inline">{m.weights.license}</dd></div>
+              <div><dt class="inline text-fg-3">Download · </dt><dd class="inline">{m.weights.size}</dd></div>
+              <div><dt class="inline text-fg-3">Runs on · </dt><dd class="inline">{m.weights.runsOn}</dd></div>
+            </dl>
+            {m.notes.length > 0 && (
+              <ul class="prose mt-4 list-disc space-y-1 pl-5 text-[14px]">
+                {m.notes.map((n) => (
+                  <li set:html={n.replace(/`([^`]+)`/g, '<code>$1</code>')} />
+                ))}
+              </ul>
+            )}
+          </section>
+        ))
+      }
+    </article>
+  </div>
+</Layout>

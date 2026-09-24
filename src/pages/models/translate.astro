@@ -1,0 +1,79 @@
+---
+import { PAIRS } from 'runonweb/translate'
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('translate')
+if (!model) throw new Error('Model translate not found')
+const seo = modelSeo(model)
+
+/**
+ * Curated demo pairs. Weights load from Hugging Face (`runonweb/firefox-translations`);
+ * they are ~30 MB each and exceed Cloudflare Workers' 25 MiB static-asset limit, so they
+ * are not self-hosted on this site. `pnpm models:translate` is still useful for local
+ * offline copies.
+ */
+const DEMO_PAIRS = [
+  'en-es', 'es-en', 'en-fr', 'fr-en', 'en-de', 'de-en', 'en-it', 'it-en', 'en-pt', 'pt-en',
+  'en-ca', 'ca-en', 'en-nl', 'nl-en', 'en-ja', 'ja-en', 'en-zh', 'zh-en', 'en-ko', 'ko-en',
+]
+const pairs = DEMO_PAIRS.filter((k) => k in PAIRS).map((k) => PAIRS[k])
+
+const names = new Intl.DisplayNames(['en'], { type: 'language' })
+const langName = (code: string) => {
+  try {
+    return names.of(code) ?? code
+  } catch {
+    return code
+  }
+}
+const mb = (bytes: number) => `${Math.round((bytes + 5e6) / 1e6)} MB`
+const defaultPair = pairs.some((p) => p.from === 'en' && p.to === 'es') ? 'en-es' : `${pairs[0]?.from}-${pairs[0]?.to}`
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="tr" idle="Pick a pair and a sample, or type your own" />
+      <Samples prefix="tr" samples={model.samples} />
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          Pair
+          <select data-tr-pair class="field w-auto py-2">
+            {
+              pairs.map((p) => {
+                const key = `${p.from}-${p.to}`
+                return (
+                  <option value={key} data-from={p.from} data-to={p.to} selected={key === defaultPair}>
+                    {langName(p.from)} → {langName(p.to)} · {mb(p.bytes)}
+                  </option>
+                )
+              })
+            }
+          </select>
+        </label>
+        <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          <input data-tr-html type="checkbox" class="accent-accent" />
+          HTML input
+        </label>
+        <span class="font-mono text-[12px] text-fg-3">Cached after the first load · {Object.keys(PAIRS).length} pairs in the SDK</span>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <textarea data-tr-input rows="5" class="field" placeholder="Type something to translate…">Browser-side AI keeps your data private and works offline once the model is cached.</textarea>
+        <div data-tr-result class="field min-h-28 whitespace-pre-wrap text-fg-2">Translation will appear here…</div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-tr-run" variant="primary">Translate</Button>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/translate.ts'
+</script>

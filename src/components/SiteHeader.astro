@@ -1,0 +1,58 @@
+---
+import Logo from './Logo.astro'
+import StoragePanel from './StoragePanel.astro'
+import { models } from '../data/models'
+
+const pathname = Astro.url.pathname
+const isModels = pathname.startsWith('/models')
+const isDocs = pathname.startsWith('/docs')
+---
+
+<header class="container-x flex h-16 items-center justify-between border-b border-line" transition:persist="site-header">
+  <a href="/" class="flex items-center gap-2.5 font-sans text-[15px] font-semibold tracking-tight" aria-label="runonweb home">
+    <Logo />
+    <span>runonweb</span>
+  </a>
+
+  <nav class="flex items-center gap-1 font-sans text-[14px] font-medium" aria-label="Main">
+    <div class="group relative">
+      <a
+        href="/models"
+        data-nav="models"
+        class:list={['inline-flex items-center gap-1.5 rounded-md px-3 py-2 transition hover:bg-bg-3', isModels && 'bg-bg-3']}
+        aria-current={pathname === '/models' ? 'page' : undefined}
+      >
+        Models
+        <span class="readout text-fg-3">{String(models.length).padStart(2, '0')}</span>
+      </a>
+      <div
+        class="invisible absolute top-full right-0 z-50 w-[22rem] pt-2 opacity-0 transition-[opacity,visibility] group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+      >
+        <ul class="card p-1.5 shadow-[0_30px_60px_-20px_rgb(0_0_0/0.8)]" aria-label="All models">
+          {
+            models.map((m) => (
+              <li>
+                <a
+                  href={`/models/${m.slug}`}
+                  data-nav-model
+                  class="flex items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-bg-3"
+                  style={`--hue:${m.hue}`}
+                  aria-current={pathname === `/models/${m.slug}` ? 'page' : undefined}
+                >
+                  <span class="led" />
+                  <span class="font-semibold">{m.name}</span>
+                  <span class="readout ml-auto text-fg-3">{m.task}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+    <a href="/docs" data-nav="docs" class:list={['rounded-md px-3 py-2 transition hover:bg-bg-3', isDocs && 'bg-bg-3']} aria-current={isDocs ? 'page' : undefined}>Docs</a>
+    <span class="ml-2 border-l border-line pl-2">
+      <StoragePanel />
+    </span>
+  </nav>
+</header>
+

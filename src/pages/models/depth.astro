@@ -1,0 +1,39 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import ImageDropzone from '../../components/models/ImageDropzone.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('depth')
+if (!model) throw new Error('Model depth not found')
+const seo = modelSeo(model)
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="dep" idle="Pick a sample or drop an image — it runs right away" />
+      <Samples prefix="dep" samples={model.samples} />
+      <ImageDropzone prefix="dep" />
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-dep-run" variant="primary" disabled>Estimate depth</Button>
+        <Button as="a" attr="data-dep-download" hidden download="runonweb-depth.png">Download PNG</Button>
+      </div>
+      <div data-dep-preview hidden>
+        <compare-slider data-dep-compare data-single class="w-full" style="--compare-bg: #0a0a0b">
+          <img data-dep-before alt="Original" />
+          <img data-layer="after" data-dep-after alt="Depth map, brighter is closer" />
+        </compare-slider>
+        <p class="readout mt-3 text-fg-3">Brighter is closer</p>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/depth.ts'
+</script>

@@ -1,0 +1,69 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import PixelIcon from '../../components/models/PixelIcon.astro'
+import { models, modelsByInput, INPUT_LABEL, shortSize, type ModelInput } from '../../data/models'
+import { catalogJsonLd } from '../../lib/seo'
+
+const groups: ModelInput[] = ['audio', 'image', 'text']
+---
+
+<Layout
+  title="Browser AI models: speech, vision and text"
+  description="Every runonweb module: speech, vision and text models that run in the browser on WebGPU or WASM. Live demos, copy-paste code, measured timings, base model and license for each one."
+  ogImage="/og/models.png"
+  ogImageAlt="runonweb models — speech, vision and text AI that runs in the browser"
+  jsonLd={catalogJsonLd()}
+>
+  <header class="container-x pt-10 sm:pt-16">
+    <p class="readout text-fg-3">{String(models.length).padStart(2, '0')} modules</p>
+    <h1 class="mt-3 text-[clamp(3rem,8vw,6rem)] leading-[0.95]">Models</h1>
+    <p class="prose mt-6 max-w-2xl">
+      One import per task. Each page has a live demo, the code to copy, measured timings, and the base model with
+      its license.
+    </p>
+  </header>
+
+  {
+    groups.map((input) => (
+      <section class="container-x mt-14" aria-labelledby={`group-${input}`}>
+        <div class="flex items-baseline gap-3 border-b border-line pb-3">
+          <h2 id={`group-${input}`} class="text-[22px] leading-none">{INPUT_LABEL[input]} models</h2>
+          <span class="readout text-fg-3">{String(modelsByInput(input).length).padStart(2, '0')}</span>
+        </div>
+        <ul class="divide-y divide-line">
+          {modelsByInput(input).map((m) => (
+            <li>
+              <a
+                href={`/models/${m.slug}`}
+                class="group grid grid-cols-[auto_1fr] items-center gap-x-5 gap-y-3 py-5 transition hover:bg-bg-2 sm:-mx-4 sm:grid-cols-[3rem_minmax(11rem,1.2fr)_minmax(12rem,1fr)_1fr_1fr_auto] sm:px-4"
+                style={`--hue:${m.hue}`}
+              >
+                <span class="readout text-fg-3">{String(models.indexOf(m) + 1).padStart(2, '0')}</span>
+                <span class="flex items-center gap-3">
+                  <span class="led" />
+                  <h3 class="w-fit font-sans text-[22px] font-semibold tracking-tight" data-vt="name" transition:name={`model-name-${m.slug}`} transition:animate="none">{m.name}</h3>
+                  {m.status === 'beta' && <span class="tag">Beta</span>}
+                </span>
+                <span class="col-span-2 sm:col-span-1">
+                  <span class="readout block text-fg-3">{m.task}</span>
+                  <span class="mt-1 block font-sans text-[14px] text-fg-2">{m.tagline}</span>
+                </span>
+                <span class="hidden sm:block">
+                  <span class="readout block text-fg-3">Download</span>
+                  <span class="pxl mt-1 block text-[13px]">{shortSize(m)}</span>
+                </span>
+                <span class="hidden sm:block">
+                  <span class="readout block text-fg-3">Fastest</span>
+                  <span class="pxl mt-1 block text-[13px]">{m.bench.webgpu ?? m.bench.wasm ?? '—'}</span>
+                </span>
+                <div class="hidden h-9 w-[3.375rem] sm:block" data-vt="icon" transition:name={`model-icon-${m.slug}`} transition:animate="none">
+                  <PixelIcon rows={m.icon} hue={m.hue} class="h-full w-full" />
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</Layout>

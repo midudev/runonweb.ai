@@ -1,23 +1,139 @@
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
-</html>
+---
+import { ClientRouter } from 'astro:transitions'
+import { Font } from 'astro:assets'
+import '../styles/global.css'
+import SiteHeader from '../components/SiteHeader.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+import { SITE, pageTitle, absoluteUrl } from '../data/site'
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
+interface Props {
+  /** Page title without the brand suffix. Omit on the home page. */
+  title?: string
+  description?: string
+  /** Path or absolute URL of the social image. Defaults to the site-wide one. */
+  ogImage?: string
+  ogImageAlt?: string
+  ogType?: 'website' | 'article'
+  /** Extra JSON-LD objects appended to the site-wide graph. */
+  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>
+  /** Set to true for pages that should not be indexed. */
+  noindex?: boolean
+}
+
+const {
+  title,
+  description = SITE.description,
+  ogImage = '/og/site.png',
+  ogImageAlt = `${SITE.name} — AI models that run in the browser`,
+  ogType = 'website',
+  jsonLd,
+  noindex = false,
+} = Astro.props
+
+const fullTitle = pageTitle(title)
+const canonical = new URL(Astro.url.pathname, Astro.site ?? SITE.url)
+canonical.pathname = canonical.pathname.replace(/\/+$/, '') || '/'
+const ogImageUrl = absoluteUrl(ogImage)
+
+const siteGraph: Array<Record<string, unknown>> = [
+  {
+    '@type': 'Organization',
+    '@id': `${SITE.url}/#organization`,
+    name: SITE.name,
+    url: SITE.url,
+    logo: { '@type': 'ImageObject', url: absoluteUrl('/icon-512.png'), width: 512, height: 512 },
+  },
+  {
+    '@type': 'WebSite',
+    '@id': `${SITE.url}/#website`,
+    url: SITE.url,
+    name: SITE.name,
+    description: SITE.description,
+    inLanguage: 'en',
+    publisher: { '@id': `${SITE.url}/#organization` },
+  },
+  {
+    '@type': 'WebPage',
+    '@id': `${canonical.href}#webpage`,
+    url: canonical.href,
+    name: fullTitle,
+    description,
+    inLanguage: 'en',
+    isPartOf: { '@id': `${SITE.url}/#website` },
+    primaryImageOfPage: { '@type': 'ImageObject', url: ogImageUrl, width: 1200, height: 630 },
+  },
+]
+const extra = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : []
+const graph = { '@context': 'https://schema.org', '@graph': [...siteGraph, ...extra] }
+---
+
+<!doctype html>
+<html lang="en" dir="ltr" transition:animate="none">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    {/* Fonts first: preload links + @font-face with metric-matched fallbacks, before any CSS. */}
+    <Font cssVariable="--font-geist" preload />
+    <Font cssVariable="--font-geist-mono" preload />
+    <Font cssVariable="--font-geist-pixel" preload />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    {noindex ? <meta name="robots" content="noindex, nofollow" /> : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />}
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#0a0a0b" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content={SITE.name} />
+    <meta name="apple-mobile-web-app-title" content={SITE.name} />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content={SITE.locale} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:secure_url" content={ogImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={ogImageAlt} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+
+    <link rel="preconnect" href="https://huggingface.co" crossorigin />
+    <link rel="dns-prefetch" href="https://huggingface.co" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(graph)} />
+    <ClientRouter />
+  </head>
+  <body class="min-h-dvh bg-bg text-fg" transition:animate="none">
+    <div data-nav-led class="pointer-events-none fixed inset-x-0 top-0 z-[200] h-[2px] opacity-0" aria-hidden="true" transition:persist="nav-led">
+      <span class="block h-full w-full origin-left scale-x-0 bg-accent shadow-[0_0_12px_var(--color-accent)]"></span>
+    </div>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-accent focus:px-4 focus:py-2 focus:font-sans focus:text-[14px] focus:font-semibold focus:text-bg"
+    >
+      Skip to content
+    </a>
+    <SiteHeader />
+    <main id="main" tabindex="-1" class="outline-none">
+      <slot />
+    </main>
+    <SiteFooter />
+    <script>
+      import '../scripts/client-nav.ts'
+    </script>
+  </body>
+</html>

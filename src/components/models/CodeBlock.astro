@@ -1,0 +1,75 @@
+---
+/**
+ * Code panel in the same chrome as the home hero: LED, readout title, keycap copy.
+ */
+import { highlightCode } from '../../lib/syntax-theme'
+import Button from '../ui/Button.astro'
+
+interface Props {
+  code: string
+  title?: string
+  language?: string
+}
+
+const { code, title = 'Code', language = 'ts' } = Astro.props
+const id = `code-${Math.random().toString(36).slice(2, 9)}`
+const html = await highlightCode(code, language)
+---
+
+<div class="code-block overflow-hidden border border-line bg-bg-2/90 backdrop-blur">
+  <div class="relative flex h-11 items-center justify-between gap-3 border-b border-line px-4">
+    <span class="flex min-w-0 items-center gap-2.5">
+      <span class="led shrink-0"></span>
+      <span class="readout-strong truncate">{title}</span>
+    </span>
+    <span class="flex shrink-0 items-center gap-3">
+      <span class="readout text-fg-3">{language}</span>
+      <Button size="sm" class="copy-btn shrink-0" data-copy-target={id}>Copy</Button>
+    </span>
+  </div>
+  <div class="code-body" id={id} data-raw-code={code} set:html={html} />
+</div>
+
+<style>
+  .code-body :global(pre) {
+    margin: 0;
+    overflow-x: auto;
+    padding: 1.1rem 1.25rem 1.25rem;
+    background: transparent !important;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .code-body :global(code) {
+    font-family: inherit;
+    font-size: inherit;
+    background: transparent;
+  }
+</style>
+
+<script>
+  import { onPage } from '../../scripts/lifecycle'
+
+  onPage(() => {
+    document.querySelectorAll<HTMLButtonElement>('.copy-btn').forEach((btn) => {
+      if (btn.dataset.bound) return
+      btn.dataset.bound = '1'
+      btn.addEventListener('click', async () => {
+        const targetId = btn.dataset.copyTarget
+        const el = targetId ? document.getElementById(targetId) : null
+        if (!el) return
+        const label = btn.querySelector<HTMLElement>('.btn-label') ?? btn
+        const text = el.dataset.rawCode ?? el.textContent ?? ''
+        try {
+          await navigator.clipboard.writeText(text)
+          label.textContent = 'Copied'
+        } catch {
+          label.textContent = 'Failed'
+        }
+        setTimeout(() => {
+          label.textContent = 'Copy'
+        }, 1500)
+      })
+    })
+  })
+</script>

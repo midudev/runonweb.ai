@@ -1,0 +1,267 @@
+#!/usr/bin/env node
+// Firefox Translations models for `runonweb/translate`.
+//
+//   node scripts/translate-models.mjs registry            # regenerate packages/runonweb/src/translate/registry.ts
+//   node scripts/translate-models.mjs fetch en-es es-en   # download pairs into weights/firefox-translations/<pair>/
+//   node scripts/translate-models.mjs fetch --all         # every released pair (~4 GB), ready to upload to R2 / HF
+//   node scripts/translate-models.mjs fetch               # demo pairs + WASM runtime
+//   node scripts/translate-models.mjs fetch --out DIR …   # custom output folder
+//
+// The output folder mirrors the URL layout the SDK expects under `modelPath`:
+// `<pair>/<file>` plus `runtime/` with the Bergamot WASM. Upload it as-is.
+//
+// Source of truth: Mozilla's model registry (MPL-2.0 weights). Per pair we keep the
+// architecture Firefox ships in release, preferring base-memory > base > tiny.
+// Files are gunzipped on the way down so the browser can fetch them raw.
+
+import { createHash } from 'node:crypto'
+import { createWriteStream } from 'node:fs'
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
+import { Readable } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
+import { fileURLToPath } from 'node:url'
+import { createGunzip } from 'node:zlib'
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const MODELS_JSON =
+  'https://storage.googleapis.com/moz-fx-translations-data--303e-prod-translations-data/db/models.json'
+const REGISTRY_TS = join(ROOT, 'packages/runonweb/src/translate/registry.ts')
+const DEFAULT_OUT = join(ROOT, 'weights/firefox-translations')
+let PUBLIC_DIR = DEFAULT_OUT
+
+const RUNTIME_VERSION = '0.4.16'
+const RUNTIME_BASE = `https://cdn.jsdelivr.net/npm/@mkljczk/bergamot-translator@${RUNTIME_VERSION}/worker/`
+const RUNTIME_FILES = ['bergamot-translator-worker.js', 'bergamot-translator-worker.wasm']
+
+/** Pairs the runonweb.ai demo offers out of the box. */
+const DEMO_PAIRS = [
+  'en-es', 'es-en', 'en-fr', 'fr-en', 'en-de', 'de-en', 'en-it', 'it-en', 'en-pt', 'pt-en',
+  'en-ca', 'ca-en', 'en-nl', 'nl-en', 'en-ja', 'ja-en', 'en-zh', 'zh-en', 'en-ko', 'ko-en',
+]
+
+const ARCH_RANK = { 'base-memory': 0, base: 1, tiny: 2 }
+
+/** Mozilla uses `zh_hant`; the SDK uses BCP 47 (`zh-Hant`). */
+function lang(code) {
+  return code.replace(/_hant$/i, '-Hant').replace(/_hans$/i, '')
+}
+
+function pairKey(from, to) {
+  return `${from}-${to}`
+}
+
+function pickEntry(entries) {
+  const released = entries.filter((e) => (e.releaseStatus ?? '').startsWith('Release'))
+  if (!released.length) return null
+  released.sort((a, b) => ARCH_RANK[a.architecture] - ARCH_RANK[b.architecture])
+  return released[0]
+}
+
+function fileName(path) {
+  return path.split('/').pop().replace(/\.gz$/, '')
+}
+
+/** Run id in the export path, e.g. `retrain_hr_fix_names_CUAEXUHoQum_cFqh-ZAryw`. */
+function revisionOf(path) {
+  const parts = path.split('/')
+  return parts[parts.length - 3] ?? 'unknown'
+}
+
+async function loadRegistry() {
+  const res = await fetch(MODELS_JSON)
+  if (!res.ok) throw new Error(`models.json: HTTP ${res.status}`)
+  const data = await res.json()
+  const pairs = {}
+  for (const [, entries] of Object.entries(data.models)) {
+    const e = pickEntry(entries)
+    if (!e) continue
+    const from = lang(e.sourceLanguage)
+    const to = lang(e.targetLanguage)
+    const f = e.files
+    const files = { model: fileName(f.model.path), lex: fileName(f.lexicalShortlist.path) }
+    if (f.vocab) files.vocab = fileName(f.vocab.path)
+    if (f.srcVocab) files.srcvocab = fileName(f.srcVocab.path)
+    if (f.trgVocab) files.trgvocab = fileName(f.trgVocab.path)
+    const sources = {}
+    for (const [k, v] of Object.entries({
+      model: f.model, lex: f.lexicalShortlist, vocab: f.vocab, srcvocab: f.srcVocab, trgvocab: f.trgVocab,
+    })) {
+      if (v) sources[k] = `${data.baseUrl}/${v.path}`
+    }
+    pairs[pairKey(from, to)] = {
+      from,
+      to,
+      architecture: e.architecture,
+      revision: revisionOf(f.model.path),
+      bytes: f.model.uncompressedSize,
+      sha256: f.model.uncompressedHash,
+      params: e.modelStatistics?.parameters ?? 0,
+      comet: e.metrics?.['flores200-plus']?.comet22 ?? null,
+      files,
+      sources,
+    }
+  }
+  return { generated: data.generated, pairs }
+}
+
+function renderRegistryTs({ generated, pairs }) {
+  const keys = Object.keys(pairs).sort()
+  const lines = keys.map((k) => {
+    const p = pairs[k]
+    const files = Object.entries(p.files)
+      .map(([n, v]) => `${n}: '${v}'`)
+      .join(', ')
+    const comet = p.comet == null ? 'null' : p.comet.toFixed(4)
+    return `  '${k}': { from: '${p.from}', to: '${p.to}', architecture: '${p.architecture}', revision: '${p.revision}', bytes: ${p.bytes}, params: ${p.params}, comet: ${comet}, files: { ${files} } },`
+  })
+  return `// Generated by scripts/translate-models.mjs from Mozilla's Firefox Translations registry.
+// Source: ${MODELS_JSON}
+// Registry generated ${generated}. Do not edit by hand.
+
+export type Architecture = 'tiny' | 'base' | 'base-memory'
+
+export type PairEntry = {
+  from: string
+  to: string
+  architecture: Architecture
+  /** Mozilla training run id. Part of the download URL so updated weights bust the cache. */
+  revision: string
+  /** Uncompressed model size in bytes (shortlist + vocab add ~5 MB). */
+  bytes: number
+  params: number
+  /** COMET-22 on FLORES-200+ as reported by Mozilla, when available. */
+  comet: number | null
+  files: { model: string; lex: string; vocab?: string; srcvocab?: string; trgvocab?: string }
+}
+
+/** Bergamot runtime (Marian in WASM) that runs these models. */
+export const RUNTIME_VERSION = '${RUNTIME_VERSION}'
+export const RUNTIME_CDN = '${RUNTIME_BASE}'
+
+/** Every released language pair, keyed \`<from>-<to>\`. */
+export const PAIRS: Record<string, PairEntry> = {
+${lines.join('\n')}
+}
+`
+}
+
+async function sha256File(path) {
+  const hash = createHash('sha256')
+  hash.update(await readFile(path))
+  return hash.digest('hex')
+}
+
+async function exists(path) {
+  try {
+    await stat(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function download(url, dest, { gunzip }) {
+  const res = await fetch(url)
+  if (!res.ok || !res.body) throw new Error(`${url}: HTTP ${res.status}`)
+  await mkdir(dirname(dest), { recursive: true })
+  const tmp = `${dest}.part`
+  const stages = [Readable.fromWeb(res.body)]
+  if (gunzip) stages.push(createGunzip())
+  stages.push(createWriteStream(tmp))
+  await pipeline(...stages)
+  await rm(dest, { force: true })
+  const { rename } = await import('node:fs/promises')
+  await rename(tmp, dest)
+}
+
+async function fetchPair(key, entry) {
+  const dir = join(PUBLIC_DIR, key)
+  const marker = join(dir, '.revision')
+  const current = (await exists(marker)) ? (await readFile(marker, 'utf8')).trim() : null
+  if (current === entry.revision) {
+    const model = join(dir, entry.files.model)
+    if ((await exists(model)) && (await sha256File(model)) === entry.sha256) {
+      console.log(`  ${key}: up to date (${entry.revision})`)
+      return
+    }
+  }
+  if (current && current !== entry.revision) {
+    await rm(dir, { recursive: true, force: true })
+  }
+  for (const [part, name] of Object.entries(entry.files)) {
+    process.stdout.write(`  ${key}: ${name} … `)
+    await download(entry.sources[part], join(dir, name), { gunzip: true })
+    console.log('ok')
+  }
+  const got = await sha256File(join(dir, entry.files.model))
+  if (got !== entry.sha256) throw new Error(`${key}: sha256 mismatch for ${entry.files.model}`)
+  await writeFile(marker, `${entry.revision}\n`)
+}
+
+async function fetchRuntime() {
+  const dir = join(PUBLIC_DIR, 'runtime')
+  const marker = join(dir, '.version')
+  if ((await exists(marker)) && (await readFile(marker, 'utf8')).trim() === RUNTIME_VERSION) {
+    console.log(`  runtime: up to date (${RUNTIME_VERSION})`)
+    return
+  }
+  for (const name of RUNTIME_FILES) {
+    process.stdout.write(`  runtime: ${name} … `)
+    await download(RUNTIME_BASE + name, join(dir, name), { gunzip: false })
+    console.log('ok')
+  }
+  await writeFile(marker, `${RUNTIME_VERSION}\n`)
+}
+
+/** `index.json`: which pairs are hosted in this folder. */
+async function writeIndex(pairs) {
+  const hosted = []
+  for (const name of (await readdir(PUBLIC_DIR, { withFileTypes: true })).filter((d) => d.isDirectory())) {
+    const key = name.name
+    if (!pairs[key]) continue
+    if (await exists(join(PUBLIC_DIR, key, '.revision'))) hosted.push(key)
+  }
+  hosted.sort()
+  const runtime = await exists(join(PUBLIC_DIR, 'runtime', '.version'))
+  await writeFile(join(PUBLIC_DIR, 'index.json'), JSON.stringify({ pairs: hosted, runtime }, null, 2) + '\n')
+  console.log(`index.json: ${hosted.length} pairs${runtime ? ' + runtime' : ''}`)
+}
+
+async function main() {
+  const [cmd = 'fetch', ...args] = process.argv.slice(2)
+  const registry = await loadRegistry()
+  console.log(`Mozilla registry ${registry.generated}: ${Object.keys(registry.pairs).length} released pairs`)
+
+  if (cmd === 'registry' || cmd === 'fetch') {
+    await writeFile(REGISTRY_TS, renderRegistryTs(registry))
+    console.log(`wrote ${REGISTRY_TS.replace(ROOT + '/', '')}`)
+  }
+  if (cmd !== 'fetch') return
+
+  const outIdx = args.indexOf('--out')
+  if (outIdx !== -1 && args[outIdx + 1]) {
+    PUBLIC_DIR = resolve(args[outIdx + 1])
+    args.splice(outIdx, 2)
+  }
+  const all = args.includes('--all')
+  const wanted = all ? Object.keys(registry.pairs) : args.filter((a) => !a.startsWith('--'))
+  const keys = wanted.length ? wanted : DEMO_PAIRS
+  await mkdir(PUBLIC_DIR, { recursive: true })
+
+  if (!args.includes('--no-runtime')) await fetchRuntime()
+  for (const key of keys) {
+    const entry = registry.pairs[key]
+    if (!entry) {
+      console.warn(`  ${key}: not in the Mozilla registry (released pairs only)`)
+      continue
+    }
+    await fetchPair(key, entry)
+  }
+  await writeIndex(registry.pairs)
+}
+
+main().catch((err) => {
+  console.error(err)
+  process.exit(1)
+})

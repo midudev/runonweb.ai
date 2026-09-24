@@ -2,16 +2,38 @@
   "name": "runonweb-ai",
   "type": "module",
   "version": "0.0.1",
+  "private": true,
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/omit-oversized-assets.mjs",
     "preview": "astro preview",
-    "astro": "astro"
+    "preview:worker": "pnpm run build && wrangler dev",
+    "deploy": "pnpm run build && wrangler deploy",
+    "astro": "astro",
+    "check": "astro check",
+    "models:translate": "node scripts/translate-models.mjs fetch",
+    "models:translate:registry": "node scripts/translate-models.mjs registry"
   },
   "dependencies": {
-    "astro": "^7.1.1"
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@fontsource/geist-pixel": "5.3.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.3.4",
+    "runonweb": "workspace:*",
+    "satori": "^0.33.5",
+    "shiki": "^4.4.3",
+    "tailwind-animations": "1.0.2",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.136.3"
   }
 }

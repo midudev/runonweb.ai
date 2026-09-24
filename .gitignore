@@ -16,9 +16,18 @@ pnpm-debug.log*
 # environment variables
 .env
 .env.production
+.dev.vars
+.dev.vars.local
+
+# wrangler
+.wrangler/
 
 # macOS-specific files
 .DS_Store
 
 # jetbrains setting folder
 .idea/
+
+# Firefox Translations weights, fetched by scripts/translate-models.mjs (uploaded to R2 / HF by hand)
+weights/
+public/models/translate/

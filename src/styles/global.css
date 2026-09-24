@@ -1,0 +1,476 @@
+@import "tailwindcss";
+
+@theme {
+  /* Font stacks come from Astro's fonts config (astro.config.mjs) and are
+     injected by <Font /> in Layout.astro, including metric-matched fallbacks. */
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
+  --font-pixel: var(--font-geist-pixel);
+
+  --color-bg: #0a0a0b;
+  --color-bg-2: #111113;
+  --color-bg-3: #19191c;
+  --color-bg-4: #222226;
+  --color-fg: #f2f2ee;
+  --color-fg-2: #a3a3a8;
+  --color-fg-3: #66666d;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-line-2: rgb(255 255 255 / 0.16);
+  --color-accent: #ffb340;
+  --color-accent-2: #ffc466;
+  --color-danger: #ff6a4a;
+
+  --radius-card: 1.25rem;
+}
+
+html {
+  color-scheme: dark;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-image: radial-gradient(1200px 600px at 70% -10%, rgb(255 179 64 / 0.07), transparent 60%);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Machine voice: pixel readouts */
+@utility pxl {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  .readout {
+    @apply pxl text-[12px] leading-none text-fg-2;
+  }
+  .readout-strong {
+    @apply pxl text-[12px] leading-none text-fg;
+  }
+  .readout-lg {
+    @apply pxl text-[clamp(1.75rem,3vw,2.5rem)] leading-none text-fg;
+  }
+
+  .led {
+    @apply inline-block size-2 rounded-[2px] bg-[color:var(--hue,var(--color-accent))] shadow-[0_0_8px_var(--hue,var(--color-accent))];
+  }
+
+  /* Keycap buttons: pixel label, chamfered corners, physical edge, LED. */
+  .btn {
+    --btn-bg: var(--color-bg-3);
+    --btn-bg-hover: var(--color-bg-4);
+    --btn-fg: var(--color-fg);
+    --btn-line: var(--color-line-2);
+    --btn-edge: #3a3a44;
+    --btn-led: transparent;
+    --btn-led-line: var(--color-fg-3);
+    --btn-led-hover: var(--color-accent);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    height: 40px;
+    padding: 0 14px 3px;
+    font-family: var(--font-pixel);
+    font-size: 13px;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--btn-fg);
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-line);
+    border-bottom: 4px solid var(--btn-edge);
+    clip-path: polygon(
+      3px 0,
+      calc(100% - 3px) 0,
+      100% 3px,
+      100% calc(100% - 3px),
+      calc(100% - 3px) 100%,
+      3px 100%,
+      0 calc(100% - 3px),
+      0 3px
+    );
+    cursor: pointer;
+    user-select: none;
+    filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.22));
+    transition:
+      background-color 120ms,
+      color 120ms,
+      transform 80ms,
+      border-bottom-width 80ms;
+  }
+  .btn::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    flex: none;
+    background: var(--btn-led);
+    box-shadow: inset 0 0 0 1px var(--btn-led-line);
+    transition: background-color 120ms, box-shadow 120ms;
+  }
+  .btn:hover {
+    background: var(--btn-bg-hover);
+  }
+  .btn:hover::before,
+  .btn:focus-visible::before {
+    background: var(--btn-led-hover);
+    box-shadow:
+      inset 0 0 0 1px var(--btn-led-hover),
+      0 0 8px var(--btn-led-hover);
+  }
+  .btn:active {
+    transform: translateY(3px);
+    border-bottom-width: 1px;
+    padding-bottom: 0;
+  }
+  .btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  .btn:disabled:not([aria-busy='true']),
+  .btn[aria-disabled='true']:not([aria-busy='true']) {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    border-bottom-width: 4px;
+  }
+  .btn:disabled:not([aria-busy='true'])::before {
+    background: var(--btn-led);
+    box-shadow: inset 0 0 0 1px var(--btn-led-line);
+  }
+  .btn[aria-busy='true'] {
+    cursor: wait;
+    pointer-events: none;
+    transform: none;
+    border-bottom-width: 4px;
+    padding-bottom: 3px;
+  }
+  .btn[aria-busy='true']::before,
+  .btn[aria-busy='true'] .btn-label {
+    visibility: hidden;
+  }
+  .btn-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 3px;
+    color: var(--btn-fg);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .btn[aria-busy='true'] .btn-loader {
+    opacity: 1;
+  }
+  .btn-primary[aria-busy='true'] .logo-core {
+    fill: currentColor;
+  }
+  .btn[aria-pressed='true'] {
+    background: var(--btn-bg-hover);
+    color: var(--color-fg);
+  }
+  .btn[aria-pressed='true']::before {
+    background: var(--btn-led-hover);
+    box-shadow:
+      inset 0 0 0 1px var(--btn-led-hover),
+      0 0 8px var(--btn-led-hover);
+  }
+  .btn-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .btn-primary {
+    --btn-bg: var(--color-accent);
+    --btn-bg-hover: var(--color-accent-2);
+    --btn-fg: var(--color-bg);
+    --btn-line: var(--color-accent-2);
+    --btn-edge: #a8691a;
+    --btn-led: var(--color-bg);
+    --btn-led-line: var(--color-bg);
+    --btn-led-hover: var(--color-bg);
+    filter: none;
+  }
+  .btn-primary:hover::before,
+  .btn-primary:focus-visible::before {
+    box-shadow:
+      inset 0 0 0 1px var(--color-bg),
+      0 0 8px rgb(10 10 11 / 0.6);
+  }
+  .btn-soft {
+    --btn-bg: var(--color-bg-4);
+    --btn-bg-hover: #2c2c31;
+    --btn-line: transparent;
+    --btn-edge: #3a3a44;
+    --btn-led-line: var(--color-fg-3);
+  }
+  .btn-sm {
+    height: 32px;
+    padding: 0 10px 3px;
+    font-size: 11px;
+    gap: 0.5rem;
+  }
+  .btn-sm::before {
+    width: 5px;
+    height: 5px;
+  }
+  .btn-noled::before {
+    display: none;
+  }
+
+  .tag {
+    @apply pxl inline-flex h-5 shrink-0 items-center rounded-md border px-2 text-[11px] leading-none whitespace-nowrap;
+    color: var(--color-accent-2);
+    border-color: color-mix(in oklab, var(--color-accent) 40%, transparent);
+    background: color-mix(in oklab, var(--color-accent) 12%, transparent);
+  }
+
+  .card {
+    @apply rounded-card border border-line bg-bg-2;
+  }
+
+  .field {
+    @apply w-full border border-line bg-bg px-3.5 py-2.5 font-mono text-[13.5px] leading-relaxed text-fg placeholder:text-fg-3 focus:border-fg-2 focus:outline-none;
+  }
+
+  .prose {
+    @apply font-sans text-[16px] leading-[1.7] text-fg-2;
+  }
+  .prose p + p {
+    @apply mt-4;
+  }
+  .prose a {
+    @apply text-fg underline decoration-fg-3 underline-offset-4 hover:decoration-fg;
+  }
+  .prose code {
+    @apply rounded bg-bg-4 px-1.5 py-0.5 font-mono text-[13px] text-fg;
+  }
+
+  /* Spec sheet: key/value grid, model hue as accent */
+  .spec-sheet {
+    margin: 0 -0.75rem;
+    border-top: 1px solid var(--color-line);
+  }
+  .spec-row {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    column-gap: 1rem;
+    align-items: start;
+    padding: 0.8rem 0.75rem;
+    border-bottom: 1px solid var(--color-line);
+    transition: background-color 150ms;
+  }
+  .spec-row:hover {
+    background: color-mix(in oklab, var(--hue, var(--color-accent)) 5%, transparent);
+  }
+  .spec-row dt {
+    @apply pxl text-[12px] leading-none text-fg-3;
+    padding-top: 5px;
+    transition: color 150ms;
+  }
+  .spec-row:hover dt {
+    @apply text-fg-2;
+  }
+  .spec-row dd {
+    @apply flex min-w-0 flex-wrap items-center gap-1.5 font-mono text-[13px] leading-6 text-fg;
+    overflow-wrap: anywhere;
+  }
+  .spec-link {
+    @apply text-fg underline underline-offset-4 transition;
+    text-decoration-color: color-mix(in oklab, var(--hue, var(--color-accent)) 45%, transparent);
+  }
+  .spec-link:hover {
+    color: var(--hue, var(--color-accent));
+    text-decoration-color: currentColor;
+  }
+  .spec-chip {
+    @apply inline-flex h-6 items-center gap-1.5 rounded-md border border-line bg-bg-3 px-2 font-mono text-[12px] leading-none whitespace-nowrap text-fg-2;
+  }
+  .spec-chip--hue {
+    color: var(--hue, var(--color-accent));
+    border-color: color-mix(in oklab, var(--hue, var(--color-accent)) 35%, transparent);
+    background: color-mix(in oklab, var(--hue, var(--color-accent)) 10%, transparent);
+  }
+  @media (max-width: 640px) {
+    .spec-row {
+      grid-template-columns: 1fr;
+      row-gap: 0.5rem;
+    }
+    .spec-row dt {
+      padding-top: 0;
+    }
+  }
+
+  /* Ruler line with ticks */
+  .rule {
+    height: 1px;
+    background: var(--color-line);
+    position: relative;
+  }
+  .rule::after {
+    content: '';
+    position: absolute;
+    inset: -3px 0 auto 0;
+    height: 7px;
+    background-image: linear-gradient(to right, var(--color-line-2) 1px, transparent 1px);
+    background-size: 8rem 100%;
+    opacity: 0.8;
+  }
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Pixel motif blink: hover on cards, always-on with .motif-live */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.motif-cell {
+  transition: opacity 120ms linear;
+}
+.group:hover .motif-cell:nth-child(3n),
+.motif-live .motif-cell:nth-child(3n) {
+  animation: flicker 900ms steps(2) infinite;
+}
+.group:hover .motif-cell:nth-child(5n),
+.motif-live .motif-cell:nth-child(5n) {
+  animation: flicker 1300ms steps(2) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .group:hover .motif-cell,
+  .motif-live .motif-cell {
+    animation: none;
+  }
+}
+
+@keyframes nav-led {
+  0% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  42% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  43% {
+    transform-origin: right;
+  }
+  100% {
+    transform: scaleX(0);
+    transform-origin: right;
+  }
+}
+
+/* Instant page swap. Only the model title + glyph morph. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-group(*) {
+  animation-duration: 0s;
+}
+
+[data-vt='name'] {
+  view-transition-class: vt-name;
+}
+[data-vt='icon'] {
+  view-transition-class: vt-icon;
+}
+
+::view-transition-group(.vt-name),
+::view-transition-group(.vt-icon) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-group(.vt-name) {
+  z-index: 4;
+}
+::view-transition-old(.vt-name) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(.vt-name) {
+  animation: none;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  object-position: left center;
+  overflow: clip;
+  mix-blend-mode: normal;
+}
+
+::view-transition-group(.vt-icon) {
+  z-index: 3;
+}
+::view-transition-old(.vt-icon) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(.vt-icon) {
+  animation: none;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  overflow: clip;
+  mix-blend-mode: normal;
+}
+
+html[data-nav='loading'] [data-nav-led] {
+  opacity: 1;
+}
+html[data-nav='loading'] [data-nav-led] > span {
+  animation: nav-led 0.85s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  html[data-nav='loading'] [data-nav-led] > span {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/* Popover reset (UA gives it borders + centered inset). In `base` so utilities still win. */
+@layer base {
+  [popover] {
+    inset: unset;
+    border: 0;
+    color: inherit;
+  }
+}

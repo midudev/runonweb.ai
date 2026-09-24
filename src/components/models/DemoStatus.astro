@@ -1,0 +1,45 @@
+---
+/** Instrument bar: LED + device + status + timing, then progress and error. Keyed by `data-<prefix>-*`. */
+interface Props {
+  prefix: string
+  idle: string
+}
+const { prefix, idle } = Astro.props
+function attr(name: string): Record<string, string> {
+  const obj: Record<string, string> = {}
+  obj['data-' + prefix + '-' + name] = ''
+  return obj
+}
+---
+
+<div class="-mx-5 -mt-5 mb-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-bg px-5 py-3 sm:-mx-8 sm:-mt-8 sm:px-8">
+  <span class="inline-flex items-center gap-2">
+    <span class="led"></span>
+    <span {...attr('device')} class="readout"></span>
+  </span>
+  <span {...attr('status')} class="readout text-fg">{idle}</span>
+  <span {...attr('timing')} class="readout ml-auto text-accent"></span>
+</div>
+
+<progress {...attr('progress')} max="100" value="0" hidden class="progress h-1 w-full"></progress>
+
+<p {...attr('error')} hidden role="alert" class="border border-danger/40 bg-danger/10 px-4 py-2.5 font-mono text-[13px] text-danger"></p>
+
+<style>
+  .progress {
+    appearance: none;
+    border: 0;
+    overflow: hidden;
+    background: var(--color-bg-4);
+  }
+  .progress::-webkit-progress-bar {
+    background: var(--color-bg-4);
+  }
+  .progress::-webkit-progress-value {
+    background: var(--color-accent);
+    transition: width 120ms linear;
+  }
+  .progress::-moz-progress-bar {
+    background: var(--color-accent);
+  }
+</style>

@@ -1,0 +1,34 @@
+---
+/** Renders a 12×8 pixel glyph from `Model.icon`. Crisp at any size. */
+interface Props {
+  rows: string[]
+  hue?: string
+  class?: string
+  align?: 'start' | 'center'
+  title?: string
+}
+const { rows, hue = 'var(--color-accent)', class: className = '', align = 'center', title } = Astro.props
+const cols = rows[0]?.length ?? 12
+const opacity: Record<string, number> = { '#': 1, '+': 0.6, '-': 0.3, '~': 1 }
+const cells: Array<{ x: number; y: number; a: number; fill: string }> = []
+rows.forEach((row, y) => {
+  ;[...row].forEach((ch, x) => {
+    const a = opacity[ch]
+    if (a) cells.push({ x, y, a, fill: ch === '~' ? 'var(--color-fg-3)' : 'currentColor' })
+  })
+})
+const par = align === 'start' ? 'xMinYMid meet' : 'xMidYMid meet'
+---
+
+<svg
+  viewBox={`0 0 ${cols} ${rows.length}`}
+  class={className}
+  role={title ? 'img' : undefined}
+  aria-hidden={title ? undefined : 'true'}
+  shape-rendering="crispEdges"
+  preserveAspectRatio={par}
+  style={`color:${hue}`}
+>
+  {title && <title>{title}</title>}
+  {cells.map((c) => <rect class="motif-cell" x={c.x} y={c.y} width="1" height="1" fill={c.fill} opacity={c.a} />)}
+</svg>

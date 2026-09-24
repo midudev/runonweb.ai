@@ -1,0 +1,136 @@
+---
+/**
+ * Installer: one command, a tab per package manager, a keycap to copy.
+ * `sm` is the same chrome as the home hero, scaled down for model/docs pages.
+ * Commands come from INSTALL_SNIPPET so they stay in sync everywhere.
+ */
+import { INSTALL_SNIPPET } from '../data/models'
+import { highlightCode } from '../lib/syntax-theme'
+import Button from './ui/Button.astro'
+
+interface Props {
+  size?: 'default' | 'sm'
+}
+const { size = 'default' } = Astro.props
+const compact = size === 'sm'
+
+const commands = INSTALL_SNIPPET.split('\n').map((cmd) => ({ cmd, manager: cmd.split(' ')[0]! }))
+const tabs = await Promise.all(commands.map(async (c) => ({ ...c, html: await highlightCode(c.cmd, 'bash') })))
+---
+
+<div
+  class:list={[
+    'hero-install w-full min-w-0 overflow-hidden border border-line-2 bg-bg-2/85 backdrop-blur',
+    compact && 'hero-install--sm',
+  ]}
+  data-hero-install
+>
+  <div
+    class:list={['flex items-center gap-0.5 border-b border-line', compact ? 'px-1.5' : 'px-2']}
+    role="tablist"
+    aria-label="Package manager"
+  >
+    {
+      tabs.map((t, i) => (
+        <button
+          type="button"
+          role="tab"
+          class:list={[
+            'readout cursor-pointer border-b-2 border-transparent text-fg-3 transition-colors hover:text-fg aria-selected:border-accent aria-selected:text-fg',
+            compact ? 'px-2 pt-2 pb-1.5' : 'px-2.5 pt-2.5 pb-2',
+          ]}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          data-hero-install-tab={i}
+        >
+          {t.manager}
+        </button>
+      ))
+    }
+  </div>
+  <div class:list={['flex min-w-0 items-center justify-between', compact ? 'gap-3 px-3.5 py-2.5' : 'gap-4 px-5 py-4']}>
+    <div class="grid min-w-0 flex-1">
+      {
+        tabs.map((t, i) => (
+          <div
+            class="hero-install-cmd col-start-1 row-start-1 min-w-0"
+            data-hero-install-cmd={t.cmd}
+            data-on={i === 0 ? '' : undefined}
+            aria-hidden={i === 0 ? undefined : 'true'}
+            set:html={t.html}
+          />
+        ))
+      }
+    </div>
+    <Button size="sm" attr="data-hero-install-copy" class="shrink-0">Copy</Button>
+  </div>
+</div>
+
+<style>
+  .hero-install {
+    --cmd-size: clamp(18px, 2.2vw, 26px);
+  }
+  .hero-install--sm {
+    --cmd-size: 14px;
+  }
+  .hero-install-cmd {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+  }
+  .hero-install-cmd[data-on] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .hero-install-cmd :global(pre) {
+    margin: 0;
+    overflow-x: auto;
+    background: transparent !important;
+    font-family: var(--font-mono);
+    font-size: var(--cmd-size);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+  .hero-install-cmd :global(code) {
+    font-family: inherit;
+    background: transparent;
+  }
+</style>
+
+<script>
+  import { onPage } from '../scripts/lifecycle'
+
+  onPage(() => {
+    document.querySelectorAll<HTMLElement>('[data-hero-install]').forEach((root) => {
+      const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-hero-install-tab]')]
+      const cmds = [...root.querySelectorAll<HTMLElement>('[data-hero-install-cmd]')]
+      const copy = root.querySelector<HTMLButtonElement>('[data-hero-install-copy]')
+      let current = 0
+
+      tabs.forEach((tab, i) =>
+        tab.addEventListener('click', () => {
+          current = i
+          tabs.forEach((t, j) => t.setAttribute('aria-selected', i === j ? 'true' : 'false'))
+          cmds.forEach((c, j) => {
+            c.toggleAttribute('data-on', i === j)
+            if (i === j) c.removeAttribute('aria-hidden')
+            else c.setAttribute('aria-hidden', 'true')
+          })
+        }),
+      )
+
+      copy?.addEventListener('click', async () => {
+        const label = copy.querySelector<HTMLElement>('.btn-label') ?? copy
+        const text = cmds[current]?.dataset.heroInstallCmd ?? ''
+        try {
+          await navigator.clipboard.writeText(text)
+          label.textContent = 'Copied'
+        } catch {
+          label.textContent = 'Failed'
+        }
+        setTimeout(() => {
+          label.textContent = 'Copy'
+        }, 1500)
+      })
+    })
+  })
+</script>

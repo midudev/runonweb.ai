@@ -1,0 +1,55 @@
+---
+import type { Model } from '../../data/models'
+import { INPUT_LABEL, shortSize } from '../../data/models'
+import PixelIcon from './PixelIcon.astro'
+
+interface Props {
+  model: Model
+  index?: number
+}
+const { model, index } = Astro.props
+const specs: Array<[string, string]> = [
+  ['Size', shortSize(model)],
+  ['In', INPUT_LABEL[model.input]],
+]
+---
+
+<article
+  class="h-full"
+  style={`--hue:${model.hue}`}
+>
+  <a
+    href={`/models/${model.slug}`}
+    class="group relative flex h-full flex-col overflow-hidden rounded-card border border-line bg-bg-2 transition-colors hover:border-line-2 hover:bg-bg-3 focus-visible:border-line-2 focus-visible:bg-bg-3 focus-visible:outline-none"
+  >
+    <div class="flex h-11 items-center gap-2 border-b border-line px-6">
+      <span class="led shrink-0"></span>
+      <span class="readout truncate">{model.task}</span>
+      {model.status === 'beta' && <span class="tag">Beta</span>}
+      {typeof index === 'number' && <span class="readout ml-auto shrink-0 text-fg-3">{String(index + 1).padStart(2, '0')}</span>}
+    </div>
+
+    <div class="grid flex-1 grid-cols-[1fr_auto] items-center gap-6 px-6 py-7">
+      <div class="min-w-0">
+        <h3 class="w-fit text-[34px] leading-none" data-vt="name" transition:name={`model-name-${model.slug}`} transition:animate="none">
+          {model.name}
+        </h3>
+        <p class="mt-3 max-w-[16rem] font-sans text-[15px] leading-snug text-fg-2 text-pretty">{model.tagline}</p>
+      </div>
+      <div class="h-16 w-24 shrink-0" data-vt="icon" transition:name={`model-icon-${model.slug}`} transition:animate="none">
+        <PixelIcon rows={model.icon} hue={model.hue} class="h-full w-full opacity-90 transition group-hover:opacity-100" />
+      </div>
+    </div>
+
+    <dl class="flex items-center gap-x-6 border-t border-line px-6 py-3.5">
+      {
+        specs.map(([k, v]) => (
+          <div class="flex items-baseline gap-1.5 whitespace-nowrap">
+            <dt class="readout text-fg-3">{k}</dt>
+            <dd class="pxl text-[13px] leading-none text-fg">{v}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </a>
+</article>

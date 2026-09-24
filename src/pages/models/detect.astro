@@ -1,0 +1,60 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import ImageDropzone from '../../components/models/ImageDropzone.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+
+const model = getModel('detect')
+if (!model) throw new Error('Model detect not found')
+const seo = modelSeo(model)
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="det" idle="Pick a sample, open the webcam, or drop an image — it runs right away" />
+      <Samples prefix="det" samples={model.samples}>
+        <button
+          type="button"
+          data-det-webcam
+          class="group relative size-14 border border-line bg-bg-3 text-fg-2 transition hover:border-fg-2 hover:text-fg focus-visible:border-fg focus-visible:outline-none disabled:opacity-40 data-[live]:border-accent data-[live]:text-accent"
+          aria-pressed="false"
+          title="Live webcam"
+          aria-label="Live webcam"
+        >
+          <svg viewBox="0 0 24 24" class="mx-auto size-6" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+            <rect x="2" y="6" width="15" height="12" />
+            <path d="M17 10l5-3v10l-5-3z" />
+            <circle cx="9.5" cy="12" r="2.25" />
+          </svg>
+          <span class="led pointer-events-none absolute top-1.5 right-1.5 opacity-0 group-data-[live]:opacity-100"></span>
+        </button>
+      </Samples>
+      <ImageDropzone prefix="det" />
+      <div class="flex flex-wrap items-center gap-2">
+        <Button attr="data-det-run" variant="primary" disabled>Detect objects</Button>
+        <label class="ml-auto flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          Threshold
+          <input data-det-threshold type="range" min="0.1" max="0.95" step="0.05" value="0.5" class="accent-accent" />
+          <span data-det-threshold-value class="w-8 text-fg">0.50</span>
+        </label>
+      </div>
+      <div data-det-preview hidden class="space-y-3 text-center">
+        <div data-det-stage class="relative mx-auto inline-block max-w-full overflow-hidden bg-bg data-[mirror]:[&_video]:-scale-x-100">
+          <img data-det-image alt="Selected" class="block max-h-[38rem] max-w-full" />
+          <video data-det-video class="hidden block max-h-[38rem] max-w-full" playsinline muted></video>
+          <svg data-det-overlay class="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true"></svg>
+        </div>
+        <ul data-det-list class="flex flex-wrap justify-center gap-2 font-mono text-[12px]"></ul>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/detect.ts'
+</script>

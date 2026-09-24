@@ -1,0 +1,81 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import ModelShell from '../../components/models/ModelShell.astro'
+import DemoStatus from '../../components/models/DemoStatus.astro'
+import Samples from '../../components/models/Samples.astro'
+import Button from '../../components/ui/Button.astro'
+import { getModel } from '../../data/models'
+import { modelSeo } from '../../lib/seo'
+import { CONTEXT, STRUCTURE, STYLING } from 'runonweb/clean'
+
+const model = getModel('clean')
+if (!model) throw new Error('Model clean not found')
+const seo = modelSeo(model)
+
+const stylingLabels: Record<(typeof STYLING)[number], string> = {
+  casual: 'Casual',
+  'semi-casual': 'Semi-casual',
+  'semi-formal': 'Semi-formal',
+  formal: 'Formal',
+}
+const structureLabels: Record<(typeof STRUCTURE)[number], string> = {
+  prose: 'Prose',
+  lists: 'Lists',
+}
+const contextLabels: Record<(typeof CONTEXT)[number], string> = {
+  general: 'General',
+  email: 'Email',
+}
+---
+
+<Layout {...seo}>
+  <ModelShell model={model}>
+    <div slot="demo" class="space-y-5">
+      <DemoStatus prefix="cl" idle="Paste a rough transcript, or pick a sample" />
+      <Samples prefix="cl" samples={model.samples} />
+      <div class="flex flex-wrap items-center gap-3">
+        <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          Styling
+          <select data-cl-styling class="field w-auto py-2">
+            {STYLING.map((v) => (
+              <option value={v} selected={v === 'semi-formal'}>{stylingLabels[v]}</option>
+            ))}
+          </select>
+        </label>
+        <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          Structure
+          <select data-cl-structure class="field w-auto py-2">
+            {STRUCTURE.map((v) => (
+              <option value={v} selected={v === 'prose'}>{structureLabels[v]}</option>
+            ))}
+          </select>
+        </label>
+        <label class="flex items-center gap-2 font-mono text-[12px] text-fg-2">
+          Context
+          <select data-cl-context class="field w-auto py-2">
+            {CONTEXT.map((v) => (
+              <option value={v} selected={v === 'general'}>{contextLabels[v]}</option>
+            ))}
+          </select>
+        </label>
+        <span class="font-mono text-[12px] text-fg-3">~339 MB, cached after the first load</span>
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <textarea
+          data-cl-input
+          rows="6"
+          class="field"
+          placeholder="so um i need to like send the report by uh friday…"
+        >so um i need to like send the the report by uh friday no wait make that thursday</textarea>
+        <div data-cl-result class="field min-h-28 whitespace-pre-wrap text-fg-2">Cleaned text will appear here…</div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <Button attr="data-cl-run" variant="primary">Clean transcript</Button>
+      </div>
+    </div>
+  </ModelShell>
+</Layout>
+
+<script>
+  import '../../scripts/models/clean.ts'
+</script>

@@ -1,0 +1,27 @@
+---
+import Button from '../ui/Button.astro'
+
+interface Props {
+  prefix: string
+}
+
+const { prefix } = Astro.props
+const player: Record<string, string> = { [`data-${prefix}-player`]: '' }
+const play: Record<string, string> = { [`data-${prefix}-play`]: '' }
+const time: Record<string, string> = { [`data-${prefix}-time`]: '' }
+const wave: Record<string, string> = { [`data-${prefix}-wave`]: '' }
+const audio: Record<string, string> = { [`data-${prefix}-audio`]: '' }
+---
+
+<div {...player} hidden class="space-y-2">
+  <div class="flex items-center gap-2">
+    <Button variant="soft" size="sm" {...play}>Play</Button>
+    <span {...time} class="readout text-fg-3">0:00 / 0:00</span>
+  </div>
+  <canvas
+    {...wave}
+    class="pixelated block h-24 w-full cursor-pointer border border-line bg-bg"
+    aria-label="Seek in audio"
+  ></canvas>
+  <audio {...audio} class="sr-only"></audio>
+</div>

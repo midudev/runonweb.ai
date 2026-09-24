@@ -1,0 +1,4 @@
+# Cloudflare Workers rejects static files over 25 MiB.
+# Firefox Translations `.bin` weights are ~30 MB; the site demo loads them
+# from Hugging Face. Keep them out of the Worker upload even if present in dist/.
+models/translate/**/*.bin

@@ -1,0 +1,17 @@
+---
+interface Props {
+  prefix: string
+}
+const { prefix } = Astro.props
+const dropAttr: Record<string, string> = { ['data-' + prefix + '-dropzone']: '' }
+const fileAttr: Record<string, string> = { ['data-' + prefix + '-file']: '' }
+---
+
+<div
+  {...dropAttr}
+  class="flex cursor-pointer flex-col items-center justify-center border border-dashed border-line-2 bg-bg px-4 py-12 text-center transition data-[drag=true]:border-accent data-[drag=true]:bg-accent/5"
+>
+  <p class="font-sans text-[15px] font-semibold">Drop an image here</p>
+  <p class="readout mt-2 text-fg-3">or click · PNG JPG WEBP</p>
+  <input {...fileAttr} type="file" accept="image/*" class="sr-only" />
+</div>

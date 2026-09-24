@@ -1,0 +1,126 @@
+{
+  "name": "runonweb",
+  "version": "0.0.1",
+  "description": "Free browser ML modules — speech, vision, text. Runs locally with WebGPU or WASM.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./core": {
+      "types": "./src/core/index.ts",
+      "import": "./src/core/index.ts",
+      "default": "./src/core/index.ts"
+    },
+    "./stt": {
+      "types": "./src/stt/index.ts",
+      "import": "./src/stt/index.ts",
+      "default": "./src/stt/index.ts"
+    },
+    "./remove-bg": {
+      "types": "./src/remove-bg/index.ts",
+      "import": "./src/remove-bg/index.ts",
+      "default": "./src/remove-bg/index.ts"
+    },
+    "./caption": {
+      "types": "./src/caption/index.ts",
+      "import": "./src/caption/index.ts",
+      "default": "./src/caption/index.ts"
+    },
+    "./depth": {
+      "types": "./src/depth/index.ts",
+      "import": "./src/depth/index.ts",
+      "default": "./src/depth/index.ts"
+    },
+    "./detect": {
+      "types": "./src/detect/index.ts",
+      "import": "./src/detect/index.ts",
+      "default": "./src/detect/index.ts"
+    },
+    "./ocr": {
+      "types": "./src/ocr/index.ts",
+      "import": "./src/ocr/index.ts",
+      "default": "./src/ocr/index.ts"
+    },
+    "./ocr/sizes": {
+      "types": "./src/ocr/sizes.ts",
+      "import": "./src/ocr/sizes.ts",
+      "default": "./src/ocr/sizes.ts"
+    },
+    "./embed": {
+      "types": "./src/embed/index.ts",
+      "import": "./src/embed/index.ts",
+      "default": "./src/embed/index.ts"
+    },
+    "./translate": {
+      "types": "./src/translate/index.ts",
+      "import": "./src/translate/index.ts",
+      "default": "./src/translate/index.ts"
+    },
+    "./tts": {
+      "types": "./src/tts/index.ts",
+      "import": "./src/tts/index.ts",
+      "default": "./src/tts/index.ts"
+    },
+    "./tts/voices": {
+      "types": "./src/tts/voices.ts",
+      "import": "./src/tts/voices.ts",
+      "default": "./src/tts/voices.ts"
+    },
+    "./tts/sizes": {
+      "types": "./src/tts/sizes.ts",
+      "import": "./src/tts/sizes.ts",
+      "default": "./src/tts/sizes.ts"
+    },
+    "./clean": {
+      "types": "./src/clean/index.ts",
+      "import": "./src/clean/index.ts",
+      "default": "./src/clean/index.ts"
+    },
+    "./emoji": {
+      "types": "./src/emoji/index.ts",
+      "import": "./src/emoji/index.ts",
+      "default": "./src/emoji/index.ts"
+    },
+    "./image": {
+      "types": "./src/image/index.ts",
+      "import": "./src/image/index.ts",
+      "default": "./src/image/index.ts"
+    },
+    "./image/sizes": {
+      "types": "./src/image/sizes.ts",
+      "import": "./src/image/sizes.ts",
+      "default": "./src/image/sizes.ts"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "sideEffects": false,
+  "dependencies": {
+    "@huggingface/transformers": "^4.3.0",
+    "onnxruntime-web": "^1.30.0",
+    "paddleocr": "^1.2.0",
+    "phonemizer": "^1.2.1"
+  },
+  "keywords": [
+    "webgpu",
+    "wasm",
+    "onnx",
+    "transformers",
+    "browser",
+    "ml",
+    "ai",
+    "whisper",
+    "speech-to-text",
+    "background-removal",
+    "ocr",
+    "embeddings",
+    "translation",
+    "tts",
+    "emoji",
+    "transcript-cleanup",
+    "dictation",
+    "image-generation",
+    "text-to-image",
+    "bonsai"
+  ]
+}
