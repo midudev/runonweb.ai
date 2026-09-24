@@ -56,7 +56,7 @@ Sizes are approximate. The catalog (names, colors, base model, license) lives in
 - ORMBG and BiRefNet fail in ONNX Runtime Web (`ceil()` MaxPool unsupported / abort). MODNet works but is portrait-oriented.
 - BEN2 (the remove-bg model) loads on WebGPU, then `OrtRun` fails: its fused LayerNorm is fp16 in / fp32 scale+bias+out, and the shader does not compile (`Invalid ShaderModule "LayerNorm"`). Pinned to WASM until `onnxruntime-web` includes [onnxruntime#32629](https://github.com/microsoft/onnxruntime/pull/32629).
 - On a laptop GPU, WebGPU fp16 is 5–7× faster than WASM q8 for vision models.
-- The default `onnxruntime-web` entry is the JSEP build: its `MatMulNBits` only runs 2/4-bit weights, so 8-bit layers fail at session creation (`nbits_ == 4 || nbits_ == 2 was false`). `onnxruntime-web/webgpu` (the native WebGPU EP, also what Transformers.js uses) runs them. `runonweb/classify` imports that entry.
+- The default `onnxruntime-web` entry is the JSEP build: its `MatMulNBits` only runs 2/4-bit weights, so 8-bit layers fail at session creation (`nbits_ == 4 || nbits_ == 2 was false`). `onnxruntime-web/webgpu` (the native WebGPU EP, also what Transformers.js uses) runs them, but its CPU side has no `GatherBlockQuantized` (int4 embeddings), so the WASM fallback must load `onnxruntime-web/wasm`. `runonweb/classify` picks the entry per backend.
 
 ## Site
 

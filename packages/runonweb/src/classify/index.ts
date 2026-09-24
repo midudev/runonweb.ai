@@ -427,31 +427,38 @@ async function loadRuntime(base: string, device: ResolvedDevice, onProgress?: Pr
   }
 
   onProgress?.({ status: 'initializing' })
-  const ort = await loadOrt()
   const { cache } = config
-  const empty: Record<string, OrtTensor> = {}
   const pastFor = new Map<string, string>()
   cache.layer_types.forEach((type, i) => {
     if (type === 'full_attention') {
-      for (const kv of ['key', 'value']) {
-        const dims = [1, cache.num_key_value_heads, 0, cache.attention_head_dim]
-        empty[`past_key_values.${i}.${kv}`] = new ort.Tensor('float32', new Float32Array(0), dims)
-        pastFor.set(`present.${i}.${kv}`, `past_key_values.${i}.${kv}`)
-      }
+      for (const kv of ['key', 'value']) pastFor.set(`present.${i}.${kv}`, `past_key_values.${i}.${kv}`)
     } else {
-      const conv = [1, cache.conv_dim, cache.conv_kernel]
-      const rec = [1, cache.linear_heads, cache.linear_key_dim, cache.linear_value_dim]
-      empty[`past.${i}.conv`] = new ort.Tensor('float32', new Float32Array(conv.reduce((a, b) => a * b)), conv)
-      empty[`past.${i}.recurrent`] = new ort.Tensor('float32', new Float32Array(rec.reduce((a, b) => a * b)), rec)
       pastFor.set(`present.${i}.conv`, `past.${i}.conv`)
       pastFor.set(`present.${i}.recurrent`, `past.${i}.recurrent`)
     }
   })
+  // Zero conv/recurrent states and zero-length KV: the cache of an empty prefix.
+  const emptyCache = (ort: Ort) => {
+    const empty: Record<string, OrtTensor> = {}
+    const zeros = (dims: number[]) => new ort.Tensor('float32', new Float32Array(dims.reduce((a, b) => a * b)), dims)
+    cache.layer_types.forEach((type, i) => {
+      if (type === 'full_attention') {
+        for (const kv of ['key', 'value']) {
+          empty[`past_key_values.${i}.${kv}`] = zeros([1, cache.num_key_value_heads, 0, cache.attention_head_dim])
+        }
+      } else {
+        empty[`past.${i}.conv`] = zeros([1, cache.conv_dim, cache.conv_kernel])
+        empty[`past.${i}.recurrent`] = zeros([1, cache.linear_heads, cache.linear_key_dim, cache.linear_value_dim])
+      }
+    })
+    return empty
+  }
 
   // External data is referenced by file name, relative to the .onnx file.
   const externalData = dataFiles.map((file, i) => ({ path: file.split('/').pop()!, data: data[i]! }))
-  const create = (ep: ResolvedDevice) =>
-    ort.InferenceSession.create(model!, {
+  const create = async (ep: ResolvedDevice) => {
+    const ort = await loadOrt(ep)
+    const session = await ort.InferenceSession.create(model!, {
       executionProviders: [ep],
       externalData,
       graphOptimizationLevel: 'all',
@@ -462,31 +469,41 @@ async function loadRuntime(base: string, device: ResolvedDevice, onProgress?: Pr
         ? { preferredOutputLocation: Object.fromEntries([...pastFor.keys()].map((n) => [n, 'gpu-buffer' as const])) }
         : {}),
     })
+    return { ort, session, empty: emptyCache(ort) }
+  }
 
-  let session: OrtSession
+  let runtime: Awaited<ReturnType<typeof create>>
   let resolved = device
   try {
-    session = await create(device)
+    runtime = await create(device)
   } catch (err) {
     if (device === 'wasm') throw err
     console.warn('[runonweb/classify] WebGPU session failed, falling back to WASM:', err)
     resolved = 'wasm'
-    session = await create('wasm')
+    runtime = await create('wasm')
   }
 
   onProgress?.({ status: 'ready', progress: 100 })
-  return { ort, session, tokenizer, config, head: headW, empty, pastFor, device: resolved }
+  return { ...runtime, tokenizer, config, head: headW, pastFor, device: resolved }
 }
 
-let ortModule: Ort | null = null
+const ortModules = new Map<ResolvedDevice, Promise<Ort>>()
 
-async function loadOrt(): Promise<Ort> {
-  if (ortModule) return ortModule
-  // The native WebGPU EP build: it runs 8-bit MatMulNBits (the JSEP build in the default entry only does 2/4-bit).
-  const ort = await import('onnxruntime-web/webgpu')
-  if (typeof document !== 'undefined') ort.env.wasm.wasmPaths = ORT_WASM
-  ortModule = ort
-  return ort
+/**
+ * One ONNX Runtime Web build per backend. `onnxruntime-web/webgpu` is the native WebGPU EP: it runs 8-bit
+ * MatMulNBits, which the JSEP build in the default entry rejects, but its CPU side lacks GatherBlockQuantized
+ * (the int4 embeddings). `onnxruntime-web/wasm` has every CPU kernel the model needs.
+ */
+function loadOrt(ep: ResolvedDevice): Promise<Ort> {
+  let mod = ortModules.get(ep)
+  if (!mod) {
+    mod = (ep === 'webgpu' ? import('onnxruntime-web/webgpu') : import('onnxruntime-web/wasm')).then((ort) => {
+      if (typeof document !== 'undefined') ort.env.wasm.wasmPaths = ORT_WASM
+      return ort as Ort
+    })
+    ortModules.set(ep, mod)
+  }
+  return mod
 }
 
 class ProgressTotals {
