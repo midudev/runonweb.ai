@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+# Model weights: binary files, nothing to index.
+Disallow: /models/text2emoji-tiny/
 
 Sitemap: https://runonweb.ai/sitemap-index.xml
