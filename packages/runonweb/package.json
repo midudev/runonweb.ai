@@ -50,6 +50,11 @@
       "import": "./src/classify/index.ts",
       "default": "./src/classify/index.ts"
     },
+    "./classify/sizes": {
+      "types": "./src/classify/sizes.ts",
+      "import": "./src/classify/sizes.ts",
+      "default": "./src/classify/sizes.ts"
+    },
     "./embed": {
       "types": "./src/embed/index.ts",
       "import": "./src/embed/index.ts",

@@ -1,4 +1,4 @@
-import { Classifier, type Answer, type Question } from 'runonweb/classify'
+import { Classifier, CLASSIFY_SIZES, type Answer, type ClassifySize, type Question } from 'runonweb/classify'
 import { bindSamples, createDemoUI, formatMs, onDemoPage } from './ui.ts'
 
 onDemoPage('cls', () => {
@@ -10,6 +10,9 @@ const datesEl = ui.el<HTMLInputElement>('dates')
 const resultEl = ui.el('result')
 const jsonEl = ui.el('json')
 const runBtn = ui.el<HTMLButtonElement>('run')
+const sizeNote = ui.el('size-note')
+const sizeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-cls-size]')]
+let size: ClassifySize = 'small'
 
 let classifier: Classifier | null = null
 let classifyTimer = 0
@@ -19,15 +22,14 @@ let queued = false
 function setBusy(busy: boolean) {
   if (runBtn) runBtn.disabled = busy
   if (datesEl) datesEl.disabled = busy
+  for (const btn of sizeButtons) btn.disabled = busy
 }
 
 async function ensureModel() {
-  if (classifier) return classifier
-  const model = new Classifier({
-    // Local weights during development (public/models/runonweb/kev-0.8b-ONNX); the Hub in production.
-    modelPath: import.meta.env.DEV ? '/models/' : undefined,
-    onProgress: ui.onProgress,
-  })
+  if (classifier && classifier.size === size) return classifier
+  classifier?.dispose()
+  classifier = null
+  const model = new Classifier({ size, onProgress: ui.onProgress })
   try {
     await model.load()
   } catch (err) {
@@ -35,7 +37,7 @@ async function ensureModel() {
     throw err
   }
   classifier = model
-  if (model.device) ui.setDevice(`Using ${model.device}`)
+  if (model.device) ui.setDevice(`Using ${model.device} · ${CLASSIFY_SIZES[size].base}`)
   ui.setStatus('Model ready')
   ui.setProgress(null)
   return model
@@ -176,6 +178,8 @@ async function runClassify(source: 'click' | 'type' = 'click') {
     }
     return
   }
+  // Typing never starts the multi-gigabyte Large download; the button does.
+  if (source === 'type' && size === 'large' && classifier?.size !== 'large') return
   if (classifying) {
     queued = true
     return
@@ -214,6 +218,16 @@ function scheduleClassify() {
 
 ui.initDeviceBadge()
 runBtn?.addEventListener('click', () => void runClassify())
+for (const btn of sizeButtons) {
+  btn.addEventListener('click', () => {
+    const next = btn.dataset.clsSize as ClassifySize | undefined
+    if (!next || next === size) return
+    size = next
+    for (const b of sizeButtons) b.setAttribute('aria-pressed', b.dataset.clsSize === next ? 'true' : 'false')
+    if (sizeNote) sizeNote.textContent = `${CLASSIFY_SIZES[next].downloadMB}, cached after the first load`
+    ui.setStatus(`Size: ${CLASSIFY_SIZES[next].label} (${CLASSIFY_SIZES[next].base}, ${CLASSIFY_SIZES[next].downloadMB}). Press Classify`)
+  })
+}
 for (const el of [stateEl, questionsEl]) {
   el?.addEventListener('input', scheduleClassify)
   el?.addEventListener('keydown', (e) => {

@@ -12,19 +12,25 @@ import {
   type Question,
 } from './request.ts'
 
+import { CLASSIFY_SIZES, DEFAULT_CLASSIFY_SIZE, type ClassifySize } from './sizes.ts'
+
 export * from './request.ts'
+export { CLASSIFY_SIZES, DEFAULT_CLASSIFY_SIZE, type ClassifySize } from './sizes.ts'
 
 /**
  * Default weights: Kev-0.8B (Jared Palmer, Apache-2.0), a Jev-style decision model on Qwen3.5-0.8B-Base,
  * with its LoRA merged in and exported to ONNX by runonweb (`training/kev-onnx`). int4 weights with the
  * Gated DeltaNet layers in int8, fp32 activations: ~735 MB, the same file on WebGPU and WASM.
+ * `size: 'large'` loads Kev-4B instead.
  */
-export const DEFAULT_MODEL = 'runonweb/kev-0.8b-ONNX'
+export const DEFAULT_MODEL = CLASSIFY_SIZES[DEFAULT_CLASSIFY_SIZE].model
 
 const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/'
 
 export type ClassifyOptions = {
-  /** Hugging Face repo id, or folder name under `modelPath`. Defaults to Kev-0.8B. */
+  /** `small` = Kev-0.8B (default), `large` = Kev-4B: more accurate, several times the download and latency. */
+  size?: ClassifySize
+  /** Hugging Face repo id, or folder name under `modelPath`. Overrides `size`. */
   model?: string
   /**
    * Base URL the weights are served from, e.g. `/models/`: files are read from `<modelPath>/<model>/`.
@@ -66,7 +72,8 @@ type KevConfig = {
   hidden_size: number
   head_dim: number
   head_file: string
-  onnx: { model: string; data: string }
+  /** `data` is one external-data file or several (big models are split under 2 GB per file). */
+  onnx: { model: string; data: string | string[] }
   tokens: { state: number; question: number; option: number; option_end: number; decide: number }
   max_state_tokens: number
   max_row_tokens: number
@@ -131,6 +138,7 @@ type Runtime = {
  * ```
  */
 export class Classifier {
+  #size: ClassifySize
   #model: string
   #modelPath?: string
   #device: Device
@@ -142,12 +150,17 @@ export class Classifier {
   #queue: Promise<unknown> = Promise.resolve()
 
   constructor(options: ClassifyOptions = {}) {
-    this.#model = options.model ?? DEFAULT_MODEL
+    this.#size = options.size ?? DEFAULT_CLASSIFY_SIZE
+    this.#model = options.model ?? CLASSIFY_SIZES[this.#size].model
     this.#modelPath = options.modelPath
     this.#device = options.device ?? 'auto'
     this.#dateFacts = options.dateFacts ?? false
     this.#temperature = options.temperature
     this.#onProgress = options.onProgress
+  }
+
+  get size(): ClassifySize {
+    return this.#size
   }
 
   get device(): ResolvedDevice | null {
@@ -388,16 +401,11 @@ async function loadRuntime(base: string, device: ResolvedDevice, onProgress?: Pr
   onProgress?.({ status: 'loading', progress: 0 })
   const config = (await (await fetchCached(`${base}kev.json`)).json()) as KevConfig
 
-  const files = [
-    { key: 'model', url: `${base}${config.onnx.model}`, file: config.onnx.model },
-    { key: 'data', url: `${base}${config.onnx.data}`, file: config.onnx.data },
-    { key: 'head', url: `${base}${config.head_file}`, file: config.head_file },
-    { key: 'tokenizer', url: `${base}tokenizer.json`, file: 'tokenizer.json' },
-    { key: 'tokenizerConfig', url: `${base}tokenizer_config.json`, file: 'tokenizer_config.json' },
-  ] as const
+  const dataFiles = typeof config.onnx.data === 'string' ? [config.onnx.data] : config.onnx.data
+  const files = [config.onnx.model, config.head_file, 'tokenizer.json', 'tokenizer_config.json', ...dataFiles]
   const progress = new ProgressTotals(onProgress)
-  const [model, data, head, tokenizerJson, tokenizerConfig] = await Promise.all(
-    files.map((f) => fetchBytes(f.url, f.file, progress))
+  const [model, head, tokenizerJson, tokenizerConfig, ...data] = await Promise.all(
+    files.map((file) => fetchBytes(`${base}${file}`, file, progress))
   )
 
   const { PreTrainedTokenizer } = await import('@huggingface/transformers')
@@ -440,11 +448,12 @@ async function loadRuntime(base: string, device: ResolvedDevice, onProgress?: Pr
     }
   })
 
-  const dataPath = config.onnx.data.split('/').pop()!
+  // External data is referenced by file name, relative to the .onnx file.
+  const externalData = dataFiles.map((file, i) => ({ path: file.split('/').pop()!, data: data[i]! }))
   const create = (ep: ResolvedDevice) =>
     ort.InferenceSession.create(model!, {
       executionProviders: [ep],
-      externalData: [{ path: dataPath, data: data! }],
+      externalData,
       graphOptimizationLevel: 'all',
       // Errors only: node-placement warnings ("Some nodes were not assigned…") are expected for shape ops.
       logSeverityLevel: 3,

@@ -6,6 +6,7 @@ import Samples from '../../components/models/Samples.astro'
 import Button from '../../components/ui/Button.astro'
 import { getModel } from '../../data/models'
 import { modelSeo } from '../../lib/seo'
+import { CLASSIFY_SIZES, type ClassifySize } from 'runonweb/classify/sizes'
 
 const model = getModel('classify')
 if (!model) throw new Error('Model classify not found')
@@ -13,6 +14,7 @@ const seo = modelSeo(model)
 
 const first = model.samples[0]
 const firstText = first?.kind === 'text' ? first.text : ''
+const sizes = (['small', 'large'] as ClassifySize[]).map((id) => ({ id, ...CLASSIFY_SIZES[id] }))
 const firstQuestions =
   first?.kind === 'text' && first.extra ? JSON.stringify(JSON.parse(first.extra).questions, null, 2) : '{}'
 ---
@@ -21,6 +23,29 @@ const firstQuestions =
   <ModelShell model={model}>
     <div slot="demo" class="space-y-5">
       <DemoStatus prefix="cls" idle="Pick a sample, or write a text and your own questions" />
+      <div>
+        <p class="readout mb-2 text-fg-3">Model size</p>
+        <div class="flex flex-wrap gap-2">
+          {
+            sizes.map((s) => (
+              <button
+                type="button"
+                data-cls-size={s.id}
+                aria-pressed={s.id === 'small' ? 'true' : 'false'}
+                class="btn btn-soft h-auto flex-col items-start gap-1 px-3 py-2.5 text-left aria-pressed:bg-fg/15 aria-pressed:ring-1 aria-pressed:ring-line-2"
+              >
+                <span class="font-sans text-[13px] font-semibold">
+                  {s.label}
+                  <span class="readout ml-2 text-fg-3">{s.downloadMB}</span>
+                </span>
+                <span class="readout text-fg-3">
+                  {s.base} · {s.outOfDomain} on unseen sources
+                </span>
+              </button>
+            ))
+          }
+        </div>
+      </div>
       <Samples prefix="cls" samples={model.samples} />
       <div class="grid gap-4 lg:grid-cols-2">
         <div class="space-y-4">
@@ -42,7 +67,7 @@ const firstQuestions =
               <input data-cls-dates type="checkbox" class="accent-[var(--color-accent)]" />
               dateFacts
             </label>
-            <span class="font-mono text-[12px] text-fg-3">~750 MB, cached after the first load</span>
+            <span data-cls-size-note class="font-mono text-[12px] text-fg-3">{sizes[0]!.downloadMB}, cached after the first load</span>
           </div>
         </div>
         <div class="space-y-3">
