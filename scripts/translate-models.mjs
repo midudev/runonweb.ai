@@ -3,7 +3,7 @@
 //
 //   node scripts/translate-models.mjs registry            # regenerate packages/runonweb/src/translate/registry.ts
 //   node scripts/translate-models.mjs fetch en-es es-en   # download pairs into weights/firefox-translations/<pair>/
-//   node scripts/translate-models.mjs fetch --all         # every released pair (~4 GB), ready to upload to R2 / HF
+//   node scripts/translate-models.mjs fetch --all         # every released pair (~4 GB), uploaded as-is to HF midudev/firefox-translations
 //   node scripts/translate-models.mjs fetch               # demo pairs + WASM runtime
 //   node scripts/translate-models.mjs fetch --out DIR …   # custom output folder
 //

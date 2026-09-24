@@ -666,7 +666,7 @@ embedder.dispose()`,
       'runonweb merged the LoRA and exported the backbone to ONNX: int4 weights, Gated DeltaNet layers in int8, fp32 activations. Probabilities differ from Kev’s PyTorch fp32 path by ~0.03 on average. Recipe in `training/kev-onnx`.',
     ],
     weights: {
-      id: 'runonweb/kev-0.8b-ONNX',
+      id: 'midudev/kev-0.8b-ONNX',
       baseModel: 'Kev-0.8B (Qwen3.5-0.8B-Base + LoRA)',
       author: 'Jared Palmer · base: Qwen',
       license: 'Apache-2.0',
@@ -741,7 +741,7 @@ classifier.dispose()`,
       'Prefer one model for 100 languages? Pass `model: "Xenova/m2m100_418M"` (MIT, ~630 MB, Transformers.js, slower).',
     ],
     weights: {
-      id: 'runonweb/firefox-translations',
+      id: 'midudev/firefox-translations',
       baseModel: 'Firefox Translations (Marian NMT)',
       author: 'Mozilla',
       license: 'MPL-2.0',
@@ -890,10 +890,10 @@ cleaner.dispose()`,
     notes: [
       'Trained from scratch: a 3-layer T5 (d_model 128, 8k shared vocab) on ~490k text/emoji pairs from the Text2Emoji dataset. Recipe in `training/text2emoji`.',
       'English input. Output is a short sequence of distinct emojis; `maxEmojis` caps the length (default 12).',
-      'Weights are self-hosted: pass `modelPath: "/models/"` to serve them from your own site, or `model` with a Hugging Face repo id.',
+      'Weights download from the Hugging Face Hub (`midudev/text2emoji-tiny`). To self-host, copy the folder and pass `modelPath` plus `model` (the folder name).',
     ],
     weights: {
-      id: 'text2emoji-tiny',
+      id: 'midudev/text2emoji-tiny',
       baseModel: 'text2emoji-tiny (T5, 2.4M params, from scratch)',
       author: 'runonweb · data: Text2Emoji (KomeijiForce)',
       license: 'MIT',
@@ -903,8 +903,8 @@ cleaner.dispose()`,
     },
     usageSnippet: `import { Emojifier } from 'runonweb/emoji'
 
-// 3.9 MB, served from your own /models/ folder
-const emojifier = new Emojifier({ modelPath: '/models/' })
+// 3.9 MB from the Hugging Face Hub (midudev/text2emoji-tiny)
+const emojifier = new Emojifier()
 await emojifier.load()
 
 const { text, emojis } = await emojifier.emojify('I love pizza and my dog')

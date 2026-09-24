@@ -8,7 +8,7 @@ import { WORKER_SOURCE } from './worker.ts'
  * Hugging Face Hub (MPL-2.0). Layout: `<modelPath><from>-<to>/<file>?rev=<revision>`.
  * Self-host by pointing `modelPath` at a folder produced by `scripts/translate-models.mjs`.
  */
-export const DEFAULT_MODEL_PATH = 'https://huggingface.co/runonweb/firefox-translations/resolve/main/'
+export const DEFAULT_MODEL_PATH = 'https://huggingface.co/midudev/firefox-translations/resolve/main/'
 
 export type BergamotOptions = {
   /** Base URL of the model files. Default: Hugging Face mirror. */

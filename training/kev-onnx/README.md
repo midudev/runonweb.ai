@@ -19,9 +19,9 @@ Output: `weights/kev-0.8b-ONNX/` (gitignored), ~750 MB:
 | `tokenizer.json`, `tokenizer_config.json` | Qwen3.5 tokenizer from the pinned base revision |
 | `README.md` | model card (from `MODEL_CARD.md`) |
 
-The site's dev server reads it through `public/models/runonweb/kev-0.8b-ONNX` (a symlink to that folder,
-gitignored). Production loads `runonweb/kev-0.8b-ONNX` from the Hub:
-`hf upload runonweb/kev-0.8b-ONNX weights/kev-0.8b-ONNX .`
+Published as [`midudev/kev-0.8b-ONNX`](https://huggingface.co/midudev/kev-0.8b-ONNX), the SDK default:
+`hf upload midudev/kev-0.8b-ONNX weights/kev-0.8b-ONNX .` To test a local build, serve the folder and pass
+`modelPath` (the bundle is read from `<modelPath>/<model>/`).
 
 ## How it maps Kev
 

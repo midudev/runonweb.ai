@@ -41,7 +41,7 @@ Recipe: `training/kev-onnx` in the runonweb repo.
 ```ts
 import { Classifier } from 'runonweb/classify'
 
-const classifier = new Classifier({ model: 'runonweb/{name}-ONNX' })
+const classifier = new Classifier({ model: 'midudev/{name}-ONNX' })
 const { answers } = await classifier.classify({
   state: 'I was charged twice. Please fix this ASAP.',
   questions: { billing: { type: 'noul', instructions: 'Is this ticket about billing?' } },

@@ -13,7 +13,7 @@ if (!model) throw new Error('Model translate not found')
 const seo = modelSeo(model)
 
 /**
- * Curated demo pairs. Weights load from Hugging Face (`runonweb/firefox-translations`);
+ * Curated demo pairs. Weights load from Hugging Face (`midudev/firefox-translations`);
  * they are ~30 MB each and exceed Cloudflare Workers' 25 MiB static-asset limit, so they
  * are not self-hosted on this site. `pnpm models:translate` is still useful for local
  * offline copies.

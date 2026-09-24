@@ -151,7 +151,7 @@ const multi = new Translator({ model: 'Xenova/m2m100_418M', from: 'fr', to: 'en'
 
 Base: Mozilla's [Firefox Translations](https://github.com/mozilla/translations) models (MPL-2.0), the same Marian NMT students Firefox ships. 17–44 MB per pair (int8), 106 direct pairs between English and 58 languages; other pairs pivot through English. They run in a Web Worker through the Bergamot WASM runtime (no COOP/COEP headers needed) and are cached in Cache Storage. `PAIRS` lists every pair with architecture, size and COMET score.
 
-Weights come from the runonweb mirror on the Hugging Face Hub by default. To self-host, run `node scripts/translate-models.mjs fetch en-es es-en` (or `--all`) and pass `modelPath` pointing at wherever you upload that folder; the script also copies the runtime so you can pass `runtimePath: '<modelPath>/runtime/'` instead of loading it from jsDelivr. The registry is regenerated from Mozilla's model list with `node scripts/translate-models.mjs registry`.
+Weights come from the runonweb mirror on the Hugging Face Hub ([`midudev/firefox-translations`](https://huggingface.co/midudev/firefox-translations)) by default. To self-host, run `node scripts/translate-models.mjs fetch en-es es-en` (or `--all`) and pass `modelPath` pointing at wherever you upload that folder; the script also copies the runtime so you can pass `runtimePath: '<modelPath>/runtime/'` instead of loading it from jsDelivr. The registry is regenerated from Mozilla's model list with `node scripts/translate-models.mjs registry`.
 
 ### Text-to-speech: `runonweb/tts`
 

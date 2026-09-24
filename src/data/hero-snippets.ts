@@ -88,7 +88,7 @@ answers.billing.noul // 0.91 = p(yes)`,
 
   emoji: `import { Emojifier } from 'runonweb/emoji'
 
-const emojifier = new Emojifier({ modelPath: '/models/' })
+const emojifier = new Emojifier()
 await emojifier.load()
 
 const { text } = await emojifier.emojify('I love pizza and my dog')

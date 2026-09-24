@@ -4,16 +4,16 @@ import { loadPipeline } from '../core/pipeline.ts'
 /**
  * Default weights: `text2emoji-tiny`, a 2.4M-parameter T5 trained from scratch for runonweb
  * on the Text2Emoji dataset. 3.9 MB as q8 (encoder 1.7 MB + decoder 2.1 MB), MIT.
- * Trained with `training/text2emoji` in the runonweb repo.
+ * Trained with `training/text2emoji` in the runonweb repo. Published on the Hub as `midudev/text2emoji-tiny`.
  */
-export const DEFAULT_MODEL = 'text2emoji-tiny'
+export const DEFAULT_MODEL = 'midudev/text2emoji-tiny'
 
 export type EmojiOptions = {
   /** Model folder name (under `modelPath`) or Hugging Face repo id. */
   model?: string
   /**
-   * Base URL the weights are served from, e.g. `/models/`. The runonweb site self-hosts them
-   * in `public/models/`. Omit to download `model` from the Hugging Face Hub.
+   * Base URL the weights are served from, e.g. `/models/`: files are read from `<modelPath>/<model>/`.
+   * The runonweb site self-hosts them in `public/models/text2emoji-tiny/`. Omit to download `model` from the Hub.
    */
   modelPath?: string
   device?: Device
@@ -36,7 +36,7 @@ export type EmojiResult = {
  * ```ts
  * import { Emojifier } from 'runonweb/emoji'
  *
- * const emojifier = new Emojifier({ modelPath: '/models/' })
+ * const emojifier = new Emojifier()
  * await emojifier.load()
  * const { text } = await emojifier.emojify('I love pizza and my dog')
  * // "🍕❤️🐶"

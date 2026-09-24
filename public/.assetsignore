@@ -2,5 +2,3 @@
 # Firefox Translations `.bin` weights are ~30 MB; the site demo loads them
 # from Hugging Face. Keep them out of the Worker upload even if present in dist/.
 models/translate/**/*.bin
-# Kev weights (~750 MB) are a dev-only symlink to weights/; production loads them from the Hub.
-models/runonweb/**

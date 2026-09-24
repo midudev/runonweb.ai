@@ -17,7 +17,8 @@ function setBusy(busy: boolean) {
 
 async function ensureModel() {
   if (emojifier) return emojifier
-  const model = new Emojifier({ modelPath: '/models/', onProgress: ui.onProgress })
+  // Self-hosted copy (4 MB, public/models/text2emoji-tiny); the SDK default is the Hub repo.
+  const model = new Emojifier({ modelPath: '/models/', model: 'text2emoji-tiny', onProgress: ui.onProgress })
   try {
     await model.load()
   } catch (err) {
