@@ -1,12 +1,18 @@
+import pkg from '../../packages/runonweb/package.json' with { type: 'json' }
+
 /** Site-wide SEO constants. Keep in sync with `site` in astro.config.mjs. */
 export const SITE = {
   name: 'runonweb',
   url: 'https://runonweb.ai',
   title: 'runonweb: Free AI models that run in the browser',
+  /** ≤155 chars so search results show it whole. */
   description:
-    'Free, open-source AI modules that run in the browser: speech-to-text, transcript cleanup, background removal, captioning, depth, object detection, OCR, embeddings, translation, TTS and image generation. WebGPU or WASM, nothing leaves the device.',
+    'Free, open-source AI models that run in your browser: speech-to-text, OCR, background removal, translation, TTS and more. WebGPU or WASM, fully private.',
   locale: 'en_US',
   license: 'MIT',
+  /** Published version of the `runonweb` package. */
+  version: pkg.version,
+  npm: 'https://www.npmjs.com/package/runonweb',
 } as const
 
 /** Compose a page title. Home keeps the full brand title; other pages get " · runonweb" appended. */

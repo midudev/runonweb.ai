@@ -47,11 +47,14 @@ const specs: Spec[] = [
 
     <header class="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-end">
       <div>
-        <p class="flex items-center gap-2.5">
-          <span class="led"></span>
-          <span class="readout">{model.task}</span>
-        </p>
-        <h1 class="mt-4 w-fit text-[clamp(4rem,12vw,9rem)] leading-[0.9]" data-vt="name" transition:name={`model-name-${model.slug}`} transition:animate="none">{model.name}</h1>
+        {/* Name first in the DOM so the heading reads "Scribe: Speech-to-Text"; the task still sits above it visually. */}
+        <h1 class="flex flex-col-reverse">
+          <span class="mt-4 block w-fit text-[clamp(4rem,12vw,9rem)] leading-[0.9]" data-vt="name" transition:name={`model-name-${model.slug}`} transition:animate="none">{model.name}</span>
+          <span class="flex items-center gap-2.5">
+            <span class="led" aria-hidden="true"></span>
+            <span class="sr-only">: </span><span class="readout">{model.task}</span>
+          </span>
+        </h1>
         <p class="prose mt-7 max-w-xl text-[17px]">{model.description}</p>
         <div class="mt-8 flex flex-wrap gap-2">
           <Button href="#demo" variant="primary">Try it now</Button>

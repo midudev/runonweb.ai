@@ -1,8 +1,30 @@
 // @ts-check
+import { execFileSync } from 'node:child_process';
 import { defineConfig, fontProviders } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 import tailwindcss from '@tailwindcss/vite';
+
+/**
+ * Files whose content ends up on a page, so <lastmod> only moves when the page does.
+ * @param {string} pathname
+ */
+function pageSources(pathname) {
+  const page = pathname === '/' ? 'src/pages/index.astro' : pathname === '/models' ? 'src/pages/models/index.astro' : `src/pages${pathname}.astro`
+  return [page, 'src/data/models.ts', 'src/lib/seo.ts']
+}
+
+/**
+ * Last commit date touching `files`, or undefined outside a git checkout.
+ * @param {string[]} files
+ */
+function gitLastmod(files) {
+  try {
+    return execFileSync('git', ['log', '-1', '--format=%cI', '--', ...files], { encoding: 'utf8' }).trim() || undefined
+  } catch {
+    return undefined
+  }
+}
 
 // https://astro.build/config
 export default defineConfig({
@@ -53,12 +75,12 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      filter: (page) => !page.includes('/og/'),
+      filter: (page) => !page.includes('/og/') && !page.endsWith('.txt'),
       changefreq: 'weekly',
       priority: 0.7,
-      lastmod: new Date(),
       serialize(item) {
         const url = new URL(item.url)
+        item.lastmod = gitLastmod(pageSources(url.pathname))
         if (url.pathname === '/') item.priority = 1
         else if (url.pathname === '/models' || url.pathname.startsWith('/models/')) item.priority = 0.9
         return item

@@ -42,6 +42,7 @@ const siteGraph: Array<Record<string, unknown>> = [
     name: SITE.name,
     url: SITE.url,
     logo: { '@type': 'ImageObject', url: absoluteUrl('/icon-512.png'), width: 512, height: 512 },
+    sameAs: [SITE.npm],
   },
   {
     '@type': 'WebSite',
@@ -64,6 +65,12 @@ const siteGraph: Array<Record<string, unknown>> = [
   },
 ]
 const extra = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : []
+// Tie the WebPage node to the page's breadcrumb and to the thing it is about.
+const webPage = siteGraph[2]
+const breadcrumb = extra.find((n) => n['@type'] === 'BreadcrumbList' && n['@id'])
+const mainEntity = extra.find((n) => ['SoftwareApplication', 'TechArticle', 'ItemList'].includes(n['@type'] as string) && n['@id'])
+if (breadcrumb) webPage.breadcrumb = { '@id': breadcrumb['@id'] }
+if (mainEntity) webPage.mainEntity = { '@id': mainEntity['@id'] }
 const graph = { '@context': 'https://schema.org', '@graph': [...siteGraph, ...extra] }
 ---
 
@@ -78,8 +85,16 @@ const graph = { '@context': 'https://schema.org', '@graph': [...siteGraph, ...ex
     <Font cssVariable="--font-geist-mono" preload />
     <Font cssVariable="--font-geist-pixel" preload />
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical.href} />
-    {noindex ? <meta name="robots" content="noindex, nofollow" /> : <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />}
+    {
+      noindex ? (
+        <meta name="robots" content="noindex, follow" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonical.href} />
+          <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        </>
+      )
+    }
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />

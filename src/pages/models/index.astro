@@ -2,21 +2,21 @@
 import Layout from '../../layouts/Layout.astro'
 import PixelIcon from '../../components/models/PixelIcon.astro'
 import { models, modelsByInput, INPUT_LABEL, shortSize, type ModelInput } from '../../data/models'
-import { catalogJsonLd } from '../../lib/seo'
+import { catalogJsonLd, CATALOG_DESCRIPTION } from '../../lib/seo'
 
 const groups: ModelInput[] = ['audio', 'image', 'text']
 ---
 
 <Layout
   title="Browser AI models: speech, vision and text"
-  description="Every runonweb module: speech, vision and text models that run in the browser on WebGPU or WASM. Live demos, copy-paste code, measured timings, base model and license for each one."
+  description={CATALOG_DESCRIPTION}
   ogImage="/og/models.png"
   ogImageAlt="runonweb models: speech, vision and text AI that runs in the browser"
   jsonLd={catalogJsonLd()}
 >
   <header class="container-x pt-10 sm:pt-16">
     <p class="readout text-fg-3">{String(models.length).padStart(2, '0')} modules</p>
-    <h1 class="mt-3 text-[clamp(3rem,8vw,6rem)] leading-[0.95]">Models</h1>
+    <h1 class="mt-3 text-[clamp(3rem,8vw,6rem)] leading-[0.95]">Models<span class="sr-only">: AI models that run in the browser</span></h1>
     <p class="prose mt-6 max-w-2xl">
       One import per task. Each page has a live demo, the code to copy, measured timings, and the base model with
       its license.

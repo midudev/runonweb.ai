@@ -2,22 +2,13 @@
 import Layout from '../layouts/Layout.astro'
 import CodeBlock from '../components/models/CodeBlock.astro'
 import { models, INSTALL_SNIPPET } from '../data/models'
-import { docsJsonLd } from '../lib/seo'
-
-const pattern = `const m = new Module({ onProgress })
-await m.load()          // downloads + caches weights, safe to call twice
-await m.<task>(input)   // the actual work
-m.dispose()             // free memory`
-
-const core = `import { isWebGPUAvailable, resolveDevice } from 'runonweb/core'
-
-const ok = await isWebGPUAvailable()
-const device = await resolveDevice() // 'webgpu' | 'wasm'`
+import { docsJsonLd, DOCS_DESCRIPTION } from '../lib/seo'
+import { PATTERN_SNIPPET, CORE_SNIPPET } from '../data/docs'
 ---
 
 <Layout
   title="Docs: install and run AI models in the browser"
-  description="Install runonweb and use any module in a few lines: speech-to-text, transcript cleanup, background removal, captioning, depth, object detection, OCR, embeddings, text classification, translation, TTS and image generation. API, base model and notes for every task."
+  description={DOCS_DESCRIPTION}
   ogImage="/og/docs.png"
   ogImageAlt="runonweb docs: install and use browser AI modules"
   ogType="article"
@@ -40,7 +31,7 @@ const device = await resolveDevice() // 'webgpu' | 'wasm'`
     </nav>
 
     <article class="min-w-0 max-w-3xl">
-      <h1 class="text-[clamp(3rem,8vw,5.5rem)] leading-[0.95]">Docs</h1>
+      <h1 class="text-[clamp(3rem,8vw,5.5rem)] leading-[0.95]">Docs<span class="sr-only">: run AI models in the browser with runonweb</span></h1>
       <p class="prose mt-6">
         runonweb is a set of ES modules. Each one picks WebGPU or WASM, downloads the right weights,
         and decodes inputs for you.
@@ -58,7 +49,7 @@ const device = await resolveDevice() // 'webgpu' | 'wasm'`
       <section id="pattern" class="mt-16 scroll-mt-8" aria-labelledby="pattern-title">
         <h2 id="pattern-title" class="text-[30px] leading-none">The pattern: load, run, dispose</h2>
         <p class="prose mt-4">Every module follows the same shape:</p>
-        <div class="mt-5"><CodeBlock code={pattern} title="Pattern" language="ts" /></div>
+        <div class="mt-5"><CodeBlock code={PATTERN_SNIPPET} title="Pattern" language="ts" /></div>
         <p class="prose mt-4">
           Each module also exports a one-shot function (<code>transcribe</code>, <code>removeBackground</code>,
           <code>caption</code>, <code>read</code>…) that loads, runs and disposes in one call. Use the class when you will run more
@@ -68,7 +59,7 @@ const device = await resolveDevice() // 'webgpu' | 'wasm'`
 
       <section id="core" class="mt-16 scroll-mt-8" aria-labelledby="core-title">
         <h2 id="core-title" class="text-[30px] leading-none">Core: WebGPU detection</h2>
-        <div class="mt-5"><CodeBlock code={core} title="runonweb/core" language="ts" /></div>
+        <div class="mt-5"><CodeBlock code={CORE_SNIPPET} title="runonweb/core" language="ts" /></div>
       </section>
 
       {

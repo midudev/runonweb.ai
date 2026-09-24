@@ -1,6 +1,7 @@
 ---
 import Logo from './Logo.astro'
 import { modelsByInput, INPUT_LABEL, type ModelInput } from '../data/models'
+import { SITE } from '../data/site'
 
 const groups: ModelInput[] = ['audio', 'image', 'text']
 ---
@@ -44,7 +45,7 @@ const groups: ModelInput[] = ['audio', 'image', 'text']
     }
   </div>
   <div class="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-    <small class="readout text-fg-3">© {new Date().getFullYear()} runonweb.ai · v0.0.2 · MIT</small>
+    <small class="readout text-fg-3">© {new Date().getFullYear()} runonweb.ai · v{SITE.version} · MIT</small>
     <span class="readout text-fg-3">Data sent to servers: 0 bytes</span>
   </div>
 </footer>
