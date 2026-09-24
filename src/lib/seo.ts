@@ -58,7 +58,7 @@ export function modelJsonLd(model: Model): Array<Record<string, unknown>> {
       applicationCategory: 'DeveloperApplication',
       applicationSubCategory: model.task,
       operatingSystem: 'Web browser (WebGPU, WebAssembly)',
-      softwareVersion: '0.0.1',
+      softwareVersion: '0.0.2',
       license: `https://spdx.org/licenses/${SITE.license}.html`,
       isAccessibleForFree: true,
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },

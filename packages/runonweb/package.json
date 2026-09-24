@@ -1,6 +1,6 @@
 {
   "name": "runonweb",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Free browser ML modules: speech, vision, text. Runs locally with WebGPU or WASM.",
   "type": "module",
   "license": "MIT",
