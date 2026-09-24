@@ -91,6 +91,17 @@ config["onnx"]["data"] = split_external_data(onnx_dir / "model.onnx", out / "onn
 (out / "kev.json").write_text(json.dumps(config, indent=2) + "\n")
 for f in ["tokenizer.json", "tokenizer_config.json", "LICENSE"]:
     shutil.copy(base / f, out / f)
-card = (Path(__file__).parent / "MODEL_CARD.md").read_text()
+NOTES = {   # measured with parity.py against the fp32 export
+    "kev-0.8b": ("Weights are int4 (RTN, block 32) with the Gated DeltaNet projections and their MLPs in int8; "
+                 "activations fp32. ~735 MB.",
+                 "On 318 questions from Kev's development suites, probabilities differ from the fp32 export by 0.028 on "
+                 "average; 16 answers change, none with a margin above 0.2 (accuracy 0.657 vs 0.664)."),
+    "kev-4b": ("Weights are int4 (RTN, block 32), embeddings included; activations fp32. ~2.7 GB, split in two files "
+               "under 2 GB.",
+               "On 192 questions from Kev's development suites, probabilities differ from the fp32 export by 0.040 on "
+               "average; 10 answers change, 3 with a margin above 0.2 (accuracy 0.776 vs 0.766)."),
+}
+quant, parity = NOTES.get(name, ("Weights are int4 (RTN, block 32); activations fp32.", "Not measured."))
+card = (Path(__file__).parent / "MODEL_CARD.md").read_text().replace("{quant}", quant).replace("{parity}", parity)
 (out / "README.md").write_text(card.replace("{name}", name).replace("{base}", meta["base"]).replace("{revision}", meta["base_revision"]).replace("{kev_revision}", kev_rev))
 print(json.dumps(config["tokens"]), config["temperature"], blob.nbytes)

@@ -18,7 +18,7 @@ export const CLASSIFY_SIZES: Record<
     model: 'midudev/kev-4b-ONNX',
     base: 'Kev-4B',
     params: '4B',
-    downloadMB: 'TBD',
+    downloadMB: '~2.7 GB',
     outOfDomain: '0.84',
   },
 }

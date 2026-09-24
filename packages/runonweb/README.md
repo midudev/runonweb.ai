@@ -112,6 +112,7 @@ Base: all-MiniLM-L6-v2 (Apache-2.0). 384 dims, normalized.
 import { Classifier } from 'runonweb/classify'
 
 const classifier = new Classifier() // Kev-0.8B, ~750 MB, WebGPU or WASM
+// new Classifier({ size: 'large' }) // Kev-4B, ~2.7 GB, about 4× slower, more accurate
 const { answers } = await classifier.classify({
   state: 'Shoes arrived two weeks late and in the wrong size.',
   questions: {
@@ -131,7 +132,7 @@ await classifier.classify(request, { dateFacts: true }) // adds day counts betwe
 
 Base: [Kev-0.8B](https://huggingface.co/jaredpalmer/kev-0.8b) by Jared Palmer (Apache-2.0), a Jev-style decision model: a LoRA and a pointer head on Qwen3.5-0.8B-Base (Apache-2.0). Requests and answers are TypeSafe's System One shapes (`noul` / `choice` / `score`), so the same JSON works against a Kev or Jev server; `noul()`, `choice()` and `score()` build questions like the Python SDK does. Nothing is generated: the text is read once, each question runs as its own row on the text's cache and a pointer head turns it into one probability per option, calibrated with the checkpoint's temperature (`temperature: 1` for raw logits).
 
-runonweb merged the LoRA, exported the backbone with the onnxruntime-genai builder (Gated DeltaNet as `LinearAttention` ops) and quantized it to int4 with the DeltaNet layers in int8 (`training/kev-onnx`). It needs the native WebGPU build of ONNX Runtime Web (`onnxruntime-web/webgpu`); the JSEP build only runs 2/4-bit `MatMulNBits`. Probabilities differ from Kev's PyTorch fp32 path by ~0.03 on average. Kev-0.8B scores 0.70 on sources it wasn't trained on (Kev-4B 0.84, Jev 0.86); test it on your own data.
+runonweb merged the LoRA, exported the backbone with the onnxruntime-genai builder (Gated DeltaNet as `LinearAttention` ops) and quantized it to int4 (Kev-0.8B keeps the DeltaNet layers in int8) (`training/kev-onnx`). WebGPU runs on `onnxruntime-web/webgpu` (the JSEP build only runs 2/4-bit `MatMulNBits`), WASM on `onnxruntime-web/wasm` (the WebGPU build has no CPU `GatherBlockQuantized`). Probabilities differ from the fp32 export by ~0.03 (small) and ~0.04 (large) on average. On sources Kev wasn't trained on, Kev-0.8B scores 0.70 and Kev-4B 0.84 (Jev 0.86); test on your own data.
 
 ### Translation: `runonweb/translate`
 

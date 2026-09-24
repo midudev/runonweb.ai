@@ -26,14 +26,12 @@ answered with calibrated probabilities, no text generation. Requests follow Type
 - The backbone is exported with the onnxruntime-genai builder without the LM head and MTP layer: the graph
   returns `hidden_states` plus the recurrent/conv/KV cache, so the state is encoded once and each question
   runs as its own row on that cache (Kev's row form).
-- Weights are int4 (RTN, block 32) with the Gated DeltaNet projections and their MLPs in int8; activations
-  fp32. Needs `LinearAttention` / `CausalConvWithState` and 8-bit `MatMulNBits`: ONNX Runtime Web's native
-  WebGPU build (`onnxruntime-web/webgpu`) or its WASM backend.
+- {quant} Needs the `LinearAttention` / `CausalConvWithState` contrib ops: ONNX Runtime Web's native WebGPU
+  build (`onnxruntime-web/webgpu`) on the GPU, `onnxruntime-web/wasm` on the CPU.
 - The pointer head is `head.bin` (fp32: `q.weight`, `q.bias`, `k.weight`, `k.bias`); `kev.json` holds the
   calibration temperature, delimiter token ids and cache layout.
 
-On 318 questions from Kev's development suites, probabilities differ from Kev's PyTorch fp32 path by 0.03 on
-average (the fp32 export matches to 2e-5); 16 answers change, none with a margin above 0.2.
+{parity} The fp32 export of the same graph matches Kev's PyTorch fp32 path within 4e-5.
 Recipe: `training/kev-onnx` in the runonweb repo.
 
 ## Use

@@ -655,15 +655,15 @@ embedder.dispose()`,
         }),
       },
     ],
-    bench: { webgpu: '~120 ms / 3 questions', wasm: '~4 s / 3 questions' },
+    bench: { webgpu: '~120 ms / 3 questions · large ~450 ms', wasm: '~4 s / 3 questions · large ~29 s' },
     notes: [
       'Kev-0.8B by Jared Palmer: a LoRA and a pointer head on Qwen3.5-0.8B-Base, trained to answer typed questions. Each question scores its options in one forward pass; nothing is generated, so answers are probabilities, not text.',
       'Request and answer shapes are TypeSafe’s System One API (`noul` · `choice` · `score`), the same JSON a Kev or Jev server accepts. Question ids are yours; the model never sees them.',
       'Each question only sees the text and itself. The text is read once and its cache is reused for every question.',
       'Probabilities are calibrated with the temperature fitted for the checkpoint (~2.35). Pass `temperature: 1` for raw logits. Option order can still change an answer.',
       'Kev can’t subtract dates. `dateFacts: true` appends the day count between every pair of absolute dates in the text, as Kev’s `KEV_DATE_FACTS` does.',
-      'Kev-0.8B is the smallest Kev. It gets 0.70 on sources it wasn’t trained on (Kev-4B: 0.84, Jev: 0.86), is weak on general knowledge and best in English. Test it on your own data before trusting a threshold.',
-      'runonweb merged the LoRA and exported the backbone to ONNX: int4 weights, Gated DeltaNet layers in int8, fp32 activations. Probabilities differ from Kev’s PyTorch fp32 path by ~0.03 on average. Recipe in `training/kev-onnx`.',
+      'Two sizes. `small` (default) is Kev-0.8B: 0.70 on sources it wasn’t trained on, weak on general knowledge, best in English. `size: "large"` is Kev-4B: 0.84 (Jev: 0.86), ~2.7 GB and about 4× slower. Test either on your own data before trusting a threshold.',
+      'runonweb merged the LoRA and exported the backbone to ONNX: int4 weights with fp32 activations (Kev-0.8B keeps its Gated DeltaNet layers in int8). Probabilities differ from the fp32 export by ~0.03 (small) and ~0.04 (large) on average. Recipe in `training/kev-onnx`.',
     ],
     weights: {
       id: 'midudev/kev-0.8b-ONNX',
@@ -671,12 +671,12 @@ embedder.dispose()`,
       author: 'Jared Palmer · base: Qwen',
       license: 'Apache-2.0',
       sourceUrl: 'https://huggingface.co/jaredpalmer/kev-0.8b',
-      size: '~750 MB',
-      runsOn: 'int4 + int8 on WebGPU · same file on WASM',
+      size: '~750 MB · large ~2.7 GB',
+      runsOn: 'int4 on WebGPU · same files on WASM',
     },
     usageSnippet: `import { Classifier } from 'runonweb/classify'
 
-const classifier = new Classifier()
+const classifier = new Classifier() // size: 'large' for Kev-4B (~2.7 GB)
 await classifier.load()
 
 const { answers } = await classifier.classify({

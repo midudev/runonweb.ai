@@ -41,7 +41,7 @@ Source and API docs: [`packages/runonweb`](./packages/runonweb).
 | `runonweb/depth` | Depth Anything V2 Small | Apache-2.0 | ~50 MB / ~27 MB |
 | `runonweb/detect` | DETR ResNet-50 (Meta) | Apache-2.0 | ~85 MB / ~43 MB |
 | `runonweb/embed` | all-MiniLM-L6-v2 (sentence-transformers) | Apache-2.0 | ~45 MB / ~23 MB |
-| `runonweb/classify` | Kev-0.8B (Jared Palmer) on Qwen3.5-0.8B-Base, LoRA merged + ONNX by runonweb (`training/kev-onnx`) | Apache-2.0 | ~750 MB (same file on both) |
+| `runonweb/classify` | Kev-0.8B (Jared Palmer) on Qwen3.5-0.8B-Base, LoRA merged + ONNX by runonweb (`training/kev-onnx`) | Apache-2.0 | ~750 MB · `large` (Kev-4B) ~2.7 GB (same files on both) |
 | `runonweb/translate` | Firefox Translations (Mozilla, Marian NMT via Bergamot WASM) | MPL-2.0 | WASM only · ~22–49 MB per pair |
 | `runonweb/emoji` | text2emoji-tiny (trained by runonweb, `training/text2emoji`) | MIT | WASM only · ~4 MB |
 | `runonweb/tts` | Kokoro 82M (hexgrad) / Supertonic 2 (Supertone) / KittenTTS nano | Apache-2.0 · OpenRAIL-M (Supertonic) | ~326 MB (WebGPU) or ~92 MB (WASM) / ~262 MB / ~28 MB |

@@ -7,20 +7,23 @@ head on a Qwen3.5 base; nothing here retrains it.
 ```bash
 git clone https://github.com/jaredpalmer/kev && (cd kev && uv sync && uv pip install onnx onnxruntime onnxruntime-genai)
 KEV_REPO=$PWD/kev training/kev-onnx/export.sh kev-0.8b   # ~3 min on an M4 Max, needs ~8 GB RAM
+KEV_REPO=$PWD/kev training/kev-onnx/export.sh kev-4b     # ~5 min plus a 9 GB download, needs ~20 GB RAM
 ```
 
-Output: `weights/kev-0.8b-ONNX/` (gitignored), ~750 MB:
+`export.sh` pins each checkpoint's revision (Kev updates its Hub repos in place) and picks its quantization.
+Output: `weights/<name>-ONNX/` (gitignored), ~750 MB for Kev-0.8B, ~2.7 GB for Kev-4B:
 
 | File | |
 |------|---|
-| `onnx/model.onnx` + `model.onnx.data` | backbone, `input_ids` / `attention_mask` / `position_ids` [3,B,S] + cache in, `hidden_states` + cache out |
+| `onnx/model.onnx` + `model.onnx.data[_N]` | backbone (external data split under 2 GB per file), `input_ids` / `attention_mask` / `position_ids` [3,B,S] + cache in, `hidden_states` + cache out |
 | `head.bin` | pointer head, fp32 `q.weight` [256,1024], `q.bias`, `k.weight`, `k.bias` |
 | `kev.json` | temperature, delimiter token ids, context limits, cache layout |
 | `tokenizer.json`, `tokenizer_config.json` | Qwen3.5 tokenizer from the pinned base revision |
 | `README.md` | model card (from `MODEL_CARD.md`) |
 
-Published as [`midudev/kev-0.8b-ONNX`](https://huggingface.co/midudev/kev-0.8b-ONNX), the SDK default:
-`hf upload midudev/kev-0.8b-ONNX weights/kev-0.8b-ONNX .` To test a local build, serve the folder and pass
+Published as [`midudev/kev-0.8b-ONNX`](https://huggingface.co/midudev/kev-0.8b-ONNX) (`size: 'small'`, the
+default) and [`midudev/kev-4b-ONNX`](https://huggingface.co/midudev/kev-4b-ONNX) (`size: 'large'`):
+`hf upload midudev/<name>-ONNX weights/<name>-ONNX .` To test a local build, serve the folder and pass
 `modelPath` (the bundle is read from `<modelPath>/<model>/`).
 
 ## How it maps Kev
@@ -58,12 +61,25 @@ none with a margin above 0.2.
 The error comes from the DeltaNet layers, not the embeddings. Accuracy differences under ~3 points are noise
 at this sample size; drift and changed answers are the signal.
 
+Kev-4B (revision `139fdd9`, 192 questions, 30 records per suite):
+
+| Export | Size | Accuracy | Mean drift | Answers changed (margin > 0.2) |
+|--------|------|----------|------------|--------------------------------|
+| fp32 | 16 GB | 0.766 | — | — |
+| **int4 (shipped)** | **2.7 GB** | 0.776 | 0.040 | 10 (3) |
+| int4 + DeltaNet int8 | 3.8 GB | 0.771 | 0.021 | 7 (1) |
+
+At 4B the DeltaNet layers are three quarters of the weights, so int8 there costs 1.1 GB for no accuracy gain.
+
 ## Gotchas
 
 - ONNX Runtime Web's default entry is the JSEP build; its `MatMulNBits` rejects 8-bit weights
-  (`nbits_ == 4 || nbits_ == 2 was false`). Import `onnxruntime-web/webgpu` (native WebGPU EP).
+  (`nbits_ == 4 || nbits_ == 2 was false`). Import `onnxruntime-web/webgpu` (native WebGPU EP) for the GPU.
+- That WebGPU build has no CPU kernel for `GatherBlockQuantized` (the int4 embedding), so the WASM path imports
+  `onnxruntime-web/wasm` instead.
 - The builder writes the model, then fails writing `genai_config.json` (`Qwen3_5Config` has no
   `eos_token_id`). The runtime doesn't need that file; `export.sh` ignores the error.
 - Cache inputs are named `past_key_values.N.{key,value}` (attention layers) and `past.N.{conv,recurrent}`
   (DeltaNet layers); outputs `present.N.*`. Empty cache = zero conv/recurrent states and zero-length KV.
-- Measured on an M4 Max in Chromium: ~120 ms for three questions on WebGPU after warm-up, ~4 s on WASM.
+- Measured on an M4 Max in Chromium after warm-up, three questions: Kev-0.8B ~120 ms on WebGPU and ~3.7 s on
+  WASM; Kev-4B ~450 ms and ~29 s. Cold start from the Hub: ~84 s and ~280 s at ~10 MB/s.
