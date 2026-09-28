@@ -709,7 +709,7 @@ classifier.dispose()`,
     task: 'Translation',
     tagline: 'Translate text without a server.',
     description:
-      'Translate text entirely in the browser. 17–44 MB per language pair, 58 languages to and from English. Private, offline after the first load, and free of per-character pricing.',
+      'Translate text entirely in the browser. 17–44 MB per language pair, 58 languages to and from English, plus pairs like Spanish → Italian or Japanese → French through English. Private, offline after the first load, and free of per-character pricing.',
     packagePath: 'runonweb/translate',
     input: 'text',
     status: 'beta',
@@ -760,6 +760,9 @@ const { text } = await translator.translate('Hello world')
 
 // same instance, another pair (downloaded on demand)
 await translator.translate('Bonjour', { from: 'fr', to: 'en' })
+
+// no direct es-it model: pivots through English (es-en + en-it)
+await translator.translate('¿Dónde está la estación?', { from: 'es', to: 'it' })
 
 // keep the markup, translate the text nodes
 await translator.translate('<b>Hello</b> world', { html: true })

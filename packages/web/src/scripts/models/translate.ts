@@ -1,10 +1,13 @@
-import { Translator } from 'runonweb/translate'
+import { Translator, resolveRoute } from 'runonweb/translate'
 import { bindSamples, createDemoUI, formatMs, onDemoPage } from './ui.ts'
 
 onDemoPage('tr', () => {
 const ui = createDemoUI('tr')
 const timingEl = ui.el('timing')
-const pairEl = ui.el<HTMLSelectElement>('pair')
+const fromEl = ui.el<HTMLSelectElement>('from')
+const toEl = ui.el<HTMLSelectElement>('to')
+const swapEl = ui.el<HTMLButtonElement>('swap')
+const routeEl = ui.el('route')
 const inputEl = ui.el<HTMLTextAreaElement>('input')
 const resultEl = ui.el('result')
 const runBtn = ui.el<HTMLButtonElement>('run')
@@ -14,13 +17,31 @@ const htmlEl = ui.el<HTMLInputElement>('html')
 let translator: Translator | null = null
 
 function currentPair(): { from: string; to: string } {
-  const option = pairEl?.selectedOptions[0]
-  return { from: option?.dataset.from ?? 'en', to: option?.dataset.to ?? 'es' }
+  return { from: fromEl?.value ?? 'en', to: toEl?.value ?? 'es' }
+}
+
+const mb = (bytes: number) => `${Math.round((bytes + 5e6) / 1e6)} MB`
+
+/** Direct model or two hops through English, with the download it needs. */
+function showRoute() {
+  const { from, to } = currentPair()
+  const route = resolveRoute(from, to)
+  if (runBtn) runBtn.disabled = !route
+  if (!routeEl) return
+  if (!route) {
+    routeEl.textContent = from === to ? 'Pick two different languages' : 'No model for this pair'
+    return
+  }
+  const size = mb(route.reduce((sum, entry) => sum + entry.bytes, 0))
+  routeEl.textContent = route.length > 1 ? `Via English · ${size}` : `Direct · ${size}`
 }
 
 function setBusy(busy: boolean) {
   if (runBtn) runBtn.disabled = busy
-  if (pairEl) pairEl.disabled = busy
+  if (fromEl) fromEl.disabled = busy
+  if (toEl) toEl.disabled = busy
+  if (swapEl) swapEl.disabled = busy
+  if (!busy) showRoute()
 }
 
 async function ensureEngine(): Promise<Translator> {
@@ -66,10 +87,22 @@ bindSamples(ui, {
     void runTranslate()
   },
 })
-pairEl?.addEventListener('change', () => {
+function onPairChange() {
+  showRoute()
   const { from, to } = currentPair()
-  ui.setStatus(`Pair ${from} → ${to}. Translate to load it`)
+  if (resolveRoute(from, to)) ui.setStatus(`Pair ${from} → ${to}. Translate to load it`)
+}
+
+fromEl?.addEventListener('change', onPairChange)
+toEl?.addEventListener('change', onPairChange)
+swapEl?.addEventListener('click', () => {
+  if (!fromEl || !toEl) return
+  ;[fromEl.value, toEl.value] = [toEl.value, fromEl.value]
+  const result = resultEl?.textContent?.trim()
+  if (inputEl && result && result !== '(empty)' && result !== 'Translation will appear here…') inputEl.value = result
+  onPairChange()
 })
+showRoute()
 
 return () => {
   translator?.dispose()

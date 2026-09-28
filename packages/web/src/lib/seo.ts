@@ -51,7 +51,7 @@ const MODEL_SEO: Record<string, { title: string; description: string }> = {
   translate: {
     title: 'Offline translation in the browser: 58 languages',
     description:
-      'Translate between English and 58 languages in your browser with Firefox Translations models. Free, private, and offline after the first load.',
+      'Translate between English and 58 languages, or between two of them through English, in your browser with Firefox Translations models. Free, private, and offline after the first load.',
   },
   clean: {
     title: 'AI transcript cleanup in the browser, free',
