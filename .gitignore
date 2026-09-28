@@ -30,5 +30,5 @@ pnpm-debug.log*
 
 # Firefox Translations weights, fetched by scripts/translate-models.mjs (uploaded to R2 / HF by hand)
 weights/
-public/models/translate/
+packages/web/public/models/translate/
 training/kev-onnx/work/

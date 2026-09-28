@@ -1,6 +1,6 @@
 ## Development
 
-When starting the dev server, use background mode:
+The site lives in `packages/web`. When starting the dev server, run from there in background mode:
 
 ```
 astro dev --background

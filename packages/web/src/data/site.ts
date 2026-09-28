@@ -1,4 +1,4 @@
-import pkg from '../../packages/runonweb/package.json' with { type: 'json' }
+import pkg from '../../../runonweb/package.json' with { type: 'json' }
 
 /** Site-wide SEO constants. Keep in sync with `site` in astro.config.mjs. */
 export const SITE = {

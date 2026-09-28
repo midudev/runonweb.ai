@@ -13,6 +13,8 @@ pnpm check      # astro check (types)
 pnpm build
 ```
 
+Monorepo: the site lives in [`packages/web`](./packages/web) (Astro + Cloudflare Workers) and the library in [`packages/runonweb`](./packages/runonweb). Root scripts forward to `web`. Every push to `main` is built and deployed by Cloudflare Workers Builds on the `runonweb` Worker (root directory `/packages/web`, `pnpm install --frozen-lockfile && pnpm run build`, then `npx wrangler deploy`; build variables `PNPM_VERSION=11.28.0` and `SKIP_DEPENDENCY_INSTALL=1`).
+
 ## Package
 
 ```ts
@@ -46,7 +48,7 @@ Source and API docs: [`packages/runonweb`](./packages/runonweb).
 | `runonweb/emoji` | text2emoji-tiny (trained by runonweb, `training/text2emoji`) | MIT | WASM only · ~4 MB |
 | `runonweb/tts` | Kokoro 82M (hexgrad) / Supertonic 2 (Supertone) / KittenTTS nano | Apache-2.0 · OpenRAIL-M (Supertonic) | ~326 MB (WebGPU) or ~92 MB (WASM) / ~262 MB / ~28 MB |
 
-Sizes are approximate. The catalog (names, colors, base model, license) lives in [`src/data/models.ts`](./src/data/models.ts).
+Sizes are approximate. The catalog (names, colors, base model, license) lives in [`packages/web/src/data/models.ts`](./packages/web/src/data/models.ts).
 
 ### What we learned testing backends (Transformers.js 4.2, ONNX Runtime Web)
 
@@ -67,15 +69,15 @@ Sizes are approximate. The catalog (names, colors, base model, license) lives in
 | `/models/<slug>` | Model page: hero, live demo, code, specs, FAQ (`stt`, `remove-bg`, `caption`, `depth`, `detect`, `embed`, `classify`, `translate`, `emoji`, `tts`) |
 | `/docs` | Install, the shared pattern, API for every module |
 
-Sample media for the one-click demos lives in `public/samples/` (images and speech clips taken from the Transformers.js docs dataset `Xenova/transformers.js-docs`; no explicit license is published there, so replace them with owned or CC0 media before a public launch). Sample definitions are the `samples` field in `src/data/models.ts`.
+Sample media for the one-click demos lives in `packages/web/public/samples/` (images and speech clips taken from the Transformers.js docs dataset `Xenova/transformers.js-docs`; no explicit license is published there, so replace them with owned or CC0 media before a public launch). Sample definitions are the `samples` field in `packages/web/src/data/models.ts`.
 
-Design: dark "instrument panel". Geist for headings and body, Geist Mono for code, **Geist Pixel as the machine voice** (readouts: sizes, timings, backends, section numbers, status bars). Accent is phosphor amber (#ffb340). One hue per model used for LEDs and a hand-drawn 12×8 pixel icon per task (`icon` rows in `models.ts`, rendered by `PixelIcon.astro`). Favicon set is generated from the logo (`public/favicon.svg`, PNGs via sharp). The landing hero is an ordered-dither field computed by the page every frame (`src/scripts/hero-dither.ts`). Bench numbers in `models.ts` are measured, not estimated.
+Design: dark "instrument panel". Geist for headings and body, Geist Mono for code, **Geist Pixel as the machine voice** (readouts: sizes, timings, backends, section numbers, status bars). Accent is phosphor amber (#ffb340). One hue per model used for LEDs and a hand-drawn 12×8 pixel icon per task (`icon` rows in `models.ts`, rendered by `PixelIcon.astro`). Favicon set is generated from the logo (`packages/web/public/favicon.svg`, PNGs via sharp). The landing hero is an ordered-dither field computed by the page every frame (`packages/web/src/scripts/hero-dither.ts`). Bench numbers in `models.ts` are measured, not estimated.
 
 ## Adding a module
 
 1. Create `packages/runonweb/src/<name>/index.ts` using `loadPipeline` from `core/pipeline.ts`. Pick an explicit `dtype` per device and comment the resulting download size.
 2. Add the export to `packages/runonweb/package.json`.
-3. Add a `Model` entry to `src/data/models.ts` with name, color, base model, author, license and size.
-4. Add `src/pages/models/<slug>.astro` + `src/scripts/models/<slug>.ts`. Reuse `ModelShell`, `DemoStatus`, `DemoButton`, `ImageDropzone` and `createDemoUI`.
+3. Add a `Model` entry to `packages/web/src/data/models.ts` with name, color, base model, author, license and size.
+4. Add `packages/web/src/pages/models/<slug>.astro` + `packages/web/src/scripts/models/<slug>.ts`. Reuse `ModelShell`, `DemoStatus`, `DemoButton`, `ImageDropzone` and `createDemoUI`.
 6. Test the model in the browser on both backends before shipping; see the backend notes above.
 5. Only use models whose license allows redistribution and commercial use (Apache-2.0, MIT, BSD, CC-BY). Avoid `-NC` licenses.
