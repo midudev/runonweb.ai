@@ -176,4 +176,24 @@ const { image } = await generateImage('A bonsai tree in a ceramic studio')
 const url = URL.createObjectURL(image) // PNG Blob.
 ```
 
+## License
+
+The runonweb code is MIT. The MIT license does not cover the models: the package ships no weights, the browser downloads them from the Hugging Face Hub on first use, and each model keeps the license its authors chose. Check it before you ship.
+
+| Module | Model | License |
+| --- | --- | --- |
+| `stt` | Whisper tiny.en (OpenAI) | Apache-2.0 |
+| `remove-bg` | BEN2 (Prama LLC) | MIT |
+| `caption` | LFM2.5-VL-450M (Liquid AI) | [LFM Open License v1.0](https://huggingface.co/LiquidAI/LFM2.5-VL-450M/blob/main/LICENSE): free under USD 10M annual revenue |
+| `depth` | Depth Anything V2 Small | Apache-2.0 |
+| `detect` | RF-DETR Nano (Roboflow) | Apache-2.0 |
+| `ocr` | PP-OCRv6 (PaddlePaddle) | Apache-2.0 |
+| `embed` | all-MiniLM-L6-v2 (sentence-transformers) | Apache-2.0 |
+| `classify` | Kev-0.8B / Kev-4B (Jared Palmer, on Qwen3.5) | Apache-2.0 |
+| `translate` | Firefox Translations (Mozilla) · M2M100 418M (Meta) | MPL-2.0 · MIT |
+| `clean` | S1-mini (Superwhisper) | [Apache-2.0 + naming term](https://huggingface.co/superwhisper/s1-mini/blob/main/LICENSE): keep calling it "S1-mini" by "Superwhisper" |
+| `emoji` | text2emoji-tiny (runonweb) | MIT |
+| `tts` | Kokoro 82M (hexgrad) · Supertonic 2 (Supertone) · KittenTTS nano | Apache-2.0 · [OpenRAIL-M](https://huggingface.co/Supertone/supertonic-2/blob/main/LICENSE) (`size: 'multi'`, use restrictions) · Apache-2.0 |
+| `image` | Bonsai Image 4B (Prism ML, on FLUX.2 Klein) | Apache-2.0 |
+
 [API documentation and live demos](https://runonweb.ai/docs) · [Model details and licenses](https://runonweb.ai/models)

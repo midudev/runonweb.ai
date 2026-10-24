@@ -4,7 +4,7 @@ Free, open-source AI modules that run in the browser. Live demos + the `runonweb
 
 - One import per task: `runonweb/stt`, `runonweb/remove-bg`, `runonweb/embed`…
 - WebGPU when available, WASM fallback. Nothing leaves the device.
-- Every module is built on a permissively licensed open model (Apache-2.0 / MIT). Each demo page credits the base model, author and license.
+- Every module is built on an open model. Each demo page credits the base model, author and license. The code is MIT; the models keep their own licenses (see [License](#license)).
 
 ```bash
 pnpm install
@@ -41,12 +41,15 @@ Source and API docs: [`packages/runonweb`](./packages/runonweb).
 | `runonweb/remove-bg` | BEN2 | MIT | WASM only · ~219 MB |
 | `runonweb/caption` | LFM2.5-VL-450M (Liquid AI) · 9 languages | LFM Open License v1.0 (free < USD 10M revenue) | ~316 MB / ~505 MB |
 | `runonweb/depth` | Depth Anything V2 Small | Apache-2.0 | ~50 MB / ~27 MB |
-| `runonweb/detect` | DETR ResNet-50 (Meta) | Apache-2.0 | ~85 MB / ~43 MB |
+| `runonweb/detect` | RF-DETR Nano (Roboflow) | Apache-2.0 | WASM only · ~29 MB |
+| `runonweb/ocr` | PP-OCRv6 tiny / small / medium (PaddlePaddle) | Apache-2.0 | ~6 MB / ~31 MB / ~139 MB (same files on both) |
 | `runonweb/embed` | all-MiniLM-L6-v2 (sentence-transformers) | Apache-2.0 | ~45 MB / ~23 MB |
 | `runonweb/classify` | Kev-0.8B (Jared Palmer) on Qwen3.5-0.8B-Base, LoRA merged + ONNX by runonweb (`training/kev-onnx`) | Apache-2.0 | ~750 MB · `large` (Kev-4B) ~2.7 GB (same files on both) |
-| `runonweb/translate` | Firefox Translations (Mozilla, Marian NMT via Bergamot WASM) | MPL-2.0 | WASM only · ~22–49 MB per pair |
+| `runonweb/translate` | Firefox Translations (Mozilla, Marian NMT via Bergamot WASM) · optional M2M100 418M (Meta) | MPL-2.0 · MIT (M2M100) | WASM only · ~21–55 MB per pair · M2M100 ~640 MB |
+| `runonweb/clean` | S1-mini (Superwhisper) | Apache-2.0 + naming term | ~365 MB / ~413 MB |
 | `runonweb/emoji` | text2emoji-tiny (trained by runonweb, `training/text2emoji`) | MIT | WASM only · ~4 MB |
 | `runonweb/tts` | Kokoro 82M (hexgrad) / Supertonic 2 (Supertone) / KittenTTS nano | Apache-2.0 · OpenRAIL-M (Supertonic) | ~326 MB (WebGPU) or ~92 MB (WASM) / ~262 MB / ~28 MB |
+| `runonweb/image` | Bonsai Image 4B binary / ternary (Prism ML, on FLUX.2 Klein) | Apache-2.0 | WebGPU only · ~3.4 GB / ~3.9 GB |
 
 Sizes are approximate. The catalog (names, colors, base model, license) lives in [`packages/web/src/data/models.ts`](./packages/web/src/data/models.ts).
 
@@ -68,3 +71,15 @@ Sizes are approximate. The catalog (names, colors, base model, license) lives in
 4. Add `packages/web/src/pages/models/<slug>.astro` + `packages/web/src/scripts/models/<slug>.ts`. Reuse `ModelShell`, `DemoStatus`, `DemoButton`, `ImageDropzone` and `createDemoUI`.
 6. Test the model in the browser on both backends before shipping; see the backend notes above.
 5. Only use models whose license allows redistribution and commercial use (Apache-2.0, MIT, BSD, CC-BY). Avoid `-NC` licenses.
+
+## License
+
+The code in this repository and the `runonweb` package is [MIT](./LICENSE).
+
+The MIT license does not cover the models. The package ships no weights: the browser downloads them from the Hugging Face Hub on first use, and each model keeps the license its authors chose. The [Modules](#modules) table lists them per module, and [`MODELS.md`](./MODELS.md#licenses) per variant, with links to the three that add terms of their own:
+
+- `runonweb/caption`: LFM Open License v1.0, free for individuals and companies under USD 10M annual revenue.
+- `runonweb/tts` with `size: 'multi'`: OpenRAIL-M, with use restrictions (no impersonation, deception or illegal use).
+- `runonweb/clean`: Apache-2.0, plus the duty to keep calling the model "S1-mini" by "Superwhisper".
+
+The fonts in [`packages/web/src/assets/fonts`](./packages/web/src/assets/fonts) are Geist, under the SIL Open Font License 1.1 ([LICENSE](./packages/web/src/assets/fonts/LICENSE)).
