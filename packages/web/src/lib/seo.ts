@@ -91,7 +91,7 @@ export function modelFaq(model: Model): Array<{ q: string; a: string }> {
     },
     {
       q: `What does ${model.name} cost?`,
-      a: 'Nothing. runonweb is free and MIT-licensed, with no device limits, tokens or sign-in.',
+      a: `Nothing. runonweb is free and MIT-licensed, with no device limits, tokens or sign-in. The weights keep their own license: ${model.weights.license}.`,
     },
     {
       q: `Which browsers support ${model.name}?`,

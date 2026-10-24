@@ -8,7 +8,7 @@ export const GET: APIRoute = () => {
 
 > ${SITE.description}
 
-runonweb is an MIT-licensed npm package (\`npm install runonweb\`) with one ES module per task. Each module picks WebGPU or WebAssembly, downloads open weights once, caches them in the browser, and returns plain JavaScript values. No server, API key or sign-in. Every module follows the same shape: \`new Module({ onProgress })\`, \`await m.load()\`, run the task, \`m.dispose()\`.
+runonweb is an MIT-licensed npm package (\`npm install runonweb\`) with one ES module per task. Each module picks WebGPU or WebAssembly, downloads open weights once, caches them in the browser, and returns plain JavaScript values. No server, API key or sign-in. The MIT license covers the code; each model keeps its own license, listed below. Every module follows the same shape: \`new Module({ onProgress })\`, \`await m.load()\`, run the task, \`m.dispose()\`.
 
 ## Models
 
